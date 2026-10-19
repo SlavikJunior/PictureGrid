@@ -26,3 +26,4 @@ rootProject.name = "PictureGrid"
 include(":app")
 include(":core:common")
 include(":core:network")
+include(":core:images")
