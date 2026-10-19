@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 rootProject.name = "PictureGrid"
 include(":app")
 include(":core:common")
+include(":core:network")
