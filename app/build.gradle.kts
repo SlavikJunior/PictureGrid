@@ -23,7 +23,8 @@ android {
     buildTypes {
         release {
             optimization {
-                enable = false
+                // R8 включён: release-сборка минифицируется и оптимизируется.
+                enable = true
             }
         }
     }
