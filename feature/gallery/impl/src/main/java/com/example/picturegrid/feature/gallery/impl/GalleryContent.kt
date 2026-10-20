@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,45 +39,49 @@ fun GalleryContent(
     onImageClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    when {
-        state.isLoading && state.items.isEmpty() -> {
-            Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+    // Фон рисует Compose, а не окно: так фон галереи совпадает с
+    // MaterialTheme в светлой и тёмной темах.
+    Surface(modifier = modifier, color = MaterialTheme.colorScheme.background) {
+        when {
+            state.isLoading && state.items.isEmpty() -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
-        }
-        state.error != null && state.items.isEmpty() -> {
-            Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                ColumnCentered {
-                    Text(state.error, textAlign = TextAlign.Center)
-                    Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) {
-                        Text("Повторить")
+            state.error != null && state.items.isEmpty() -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    ColumnCentered {
+                        Text(state.error, textAlign = TextAlign.Center)
+                        Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) {
+                            Text("Повторить")
+                        }
                     }
                 }
             }
-        }
-        else -> {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 100.dp),
-                modifier = modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
-            ) {
-                items(state.items, key = { it.id }) { item ->
-                    GalleryCell(
-                        item = item,
-                        isRefreshing = state.isRefreshing,
-                        onImageClick = onImageClick,
-                    )
+            else -> {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 100.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
+                ) {
+                    items(state.items, key = { it.id }) { item ->
+                        GalleryCell(
+                            item = item,
+                            isRefreshing = state.isRefreshing,
+                            onImageClick = onImageClick,
+                        )
+                    }
                 }
-            }
-            if (state.refreshError != null) {
-                Box(modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                    Text(
-                        text = state.refreshError,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(8.dp),
-                    )
+                if (state.refreshError != null) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                        Text(
+                            text = state.refreshError,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(8.dp),
+                        )
+                    }
                 }
             }
         }

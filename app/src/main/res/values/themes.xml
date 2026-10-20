@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!--
+        Дневная тема окна. Ресурсы values-night переопределяют её в ночном
+        режиме: тема android:Theme.Material.Light принудительно сбрасывает
+        uiMode в notnight, из-за чего isSystemInDarkTheme() всегда возвращал
+        false и тёмная тема не включалась.
+    -->
     <style name="Theme.PictureGrid" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
