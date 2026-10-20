@@ -25,12 +25,11 @@ class OriginalImageLoaderTest {
     private val validPng = createMinimalPng()
 
     // Проверка содержимого подменяется заглушкой: тесты не зависят от
-    // декодера Android, проверки ImageInspector вынесены в отдельный тест.
+    // декодера Android.
     private val imageChecker = ImageContentChecker { bytes ->
-        val isImage = runCatching {
+        runCatching {
             javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes)) != null
         }.getOrDefault(false)
-        if (isImage) ImageContent.VALID else ImageContent.NOT_IMAGE
     }
 
     private fun storage() = ImageStorageImpl(File(tempFolder.root, "orig"), testDispatcher)
@@ -70,17 +69,12 @@ class OriginalImageLoaderTest {
     }
 
     @Test
-    fun `image exceeding size limits is rejected and not stored`() = runTest(testDispatcher) {
-        val client = FakeBytesClient(NetworkResult.Success(BinaryResponse(validPng, "image/png")))
+    fun `empty body is rejected and not stored`() = runTest(testDispatcher) {
+        val client = FakeBytesClient(NetworkResult.Success(BinaryResponse(ByteArray(0), "image/png")))
         val storage = storage()
-        val tooLarge = ImageContentChecker { ImageContent.TOO_LARGE }
-        val l = OriginalImageLoader(client, storage, testDispatcher, tooLarge)
+        val l = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         val result = l.load("https://example.com/img.png")
         assertTrue(result.isFailure)
-        assertTrue(
-            "ошибка должна сообщать о превышении размеров: ${result.exceptionOrNull()?.message}",
-            result.exceptionOrNull()?.message?.contains("dimensions") == true,
-        )
         assertNull(storage.cachedFile("https://example.com/img.png"))
     }
 

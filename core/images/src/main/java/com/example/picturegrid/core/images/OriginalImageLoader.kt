@@ -29,7 +29,7 @@ class OriginalImageLoader(
     private val networkClient: NetworkClient,
     private val storage: ImageStorage,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val imageChecker: ImageContentChecker = ImageInspector,
+    private val imageChecker: ImageContentChecker = BitmapImageContentChecker,
 ) {
 
     private val locks = ConcurrentHashMap<String, Mutex>()
@@ -45,15 +45,10 @@ class OriginalImageLoader(
                     if (!isAcceptableContentType(response.contentType)) {
                         return@withLock Result.failure(IllegalArgumentException("Not an image: ${response.contentType}"))
                     }
-                    when (imageChecker.check(response.bytes)) {
-                        ImageContent.VALID -> storage.store(url, response.bytes)
-                        ImageContent.NOT_IMAGE -> {
-                            Result.failure(IllegalArgumentException("Invalid image data"))
-                        }
-                        ImageContent.TOO_LARGE -> {
-                            Result.failure(IllegalArgumentException("Image dimensions exceed the allowed limit"))
-                        }
+                    if (!imageChecker.isImage(response.bytes)) {
+                        return@withLock Result.failure(IllegalArgumentException("Invalid image data"))
                     }
+                    storage.store(url, response.bytes)
                 }
                 is NetworkResult.Failure -> {
                     Result.failure(Exception(result.error.toMessage()))
@@ -77,7 +72,6 @@ class OriginalImageLoader(
         NetworkError.EmptyBody -> "Empty response body"
         is NetworkError.Http -> "HTTP error $code"
         is NetworkError.TooLarge -> "Response is too large (limit $limitBytes bytes)"
-        NetworkError.ForbiddenDestination -> "Destination is not allowed by the network policy"
     }
 }
 

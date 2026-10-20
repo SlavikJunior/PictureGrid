@@ -1,11 +1,6 @@
 package com.example.picturegrid.core.images
 
-import com.example.picturegrid.core.network.NetworkDestinationPolicy
 import com.example.picturegrid.core.network.RetrofitNetworkClient
-import com.example.picturegrid.core.network.applyNetworkPolicy
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import okhttp3.OkHttpClient
-import java.net.InetAddress
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.runTest
@@ -34,12 +29,11 @@ class OriginalImageLoaderRetrofitTest {
     )
 
     // Проверка содержимого подменяется заглушкой: тесты не зависят от
-    // декодера Android, проверки ImageInspector вынесены в отдельный тест.
+    // декодера Android.
     private val imageChecker = ImageContentChecker { bytes ->
-        val isImage = runCatching {
+        runCatching {
             javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes)) != null
         }.getOrDefault(false)
-        if (isImage) ImageContent.VALID else ImageContent.NOT_IMAGE
     }
 
     @Test
@@ -51,12 +45,7 @@ class OriginalImageLoaderRetrofitTest {
                 .addHeader("Content-Type", "image/png"),
         )
         val storage = ImageStorageImpl(File(tempFolder.root, "orig"), testDispatcher)
-        // MockWebServer слушает loopback, который production-политика блокирует,
-        // поэтому тест использует разрешающую политику для своего сервера.
-        val client = RetrofitNetworkClient(
-            okHttpClient = OkHttpClient.Builder().applyNetworkPolicy(AllowLocalhostPolicy).build(),
-            baseUrl = server.url("/").toString(),
-        )
+        val client = RetrofitNetworkClient(baseUrl = server.url("/").toString())
         val loader = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         val url = server.url("/img.png").toString()
         val result = loader.load(url)
@@ -70,29 +59,11 @@ class OriginalImageLoaderRetrofitTest {
     fun `returns failure on http error through Retrofit client`() = runTest(testDispatcher) {
         server.enqueue(MockResponse().setResponseCode(404))
         val storage = ImageStorageImpl(File(tempFolder.root, "orig"), testDispatcher)
-        // MockWebServer слушает loopback, который production-политика блокирует,
-        // поэтому тест использует разрешающую политику для своего сервера.
-        val client = RetrofitNetworkClient(
-            okHttpClient = OkHttpClient.Builder().applyNetworkPolicy(AllowLocalhostPolicy).build(),
-            baseUrl = server.url("/").toString(),
-        )
+        val client = RetrofitNetworkClient(baseUrl = server.url("/").toString())
         val loader = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         val url = server.url("/missing.png").toString()
         val result = loader.load(url)
         assertTrue(result.isFailure)
         org.junit.Assert.assertNull(storage.cachedFile(url))
-    }
-
-    /**
-     * Разрешает обращения к локальному MockWebServer.
-     *
-     * Production-политика блокирует loopback, поэтому тест явно выбирает
-     * разрешающее поведение для собственного сервера.
-     */
-    private object AllowLocalhostPolicy : NetworkDestinationPolicy {
-        override fun isAllowed(url: String): Boolean =
-            runCatching { url.toHttpUrlOrNull() }.getOrNull() != null
-
-        override fun isAllowedAddress(address: InetAddress): Boolean = true
     }
 }
