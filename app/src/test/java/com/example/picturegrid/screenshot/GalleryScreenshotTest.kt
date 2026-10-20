@@ -3,17 +3,25 @@ package com.example.picturegrid.screenshot
 import androidx.compose.material3.Surface
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import coil3.ImageLoader
+import coil3.Uri
+import coil3.SingletonImageLoader
+import coil3.fetch.Fetcher
+import coil3.fetch.FetchResult
 import com.example.picturegrid.core.designsystem.PictureGridTheme
+import com.example.picturegrid.core.images.NotImageContentException
 import com.example.picturegrid.feature.gallery.api.GalleryItem
 import com.example.picturegrid.feature.gallery.api.PlaceholderReason
 import com.example.picturegrid.feature.gallery.impl.GalleryContent
 import com.example.picturegrid.feature.gallery.impl.GalleryStore
 import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
+import java.io.IOException
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -22,15 +30,48 @@ class GalleryScreenshotTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    /**
+     * URL, который заведомо не является изображением.
+     *
+     * Тестовый загрузчик отвечает на него ошибкой `NotImageContentException`,
+     * поэтому ячейка показывает заглушку «Не изображение».
+     */
+    private val notImageUrl = "https://example.com/not-an-image.png"
+
     private val fakeState = GalleryStore.State(
         items = listOf(
             GalleryItem.Image("1", "https://example.com/1.png"),
             GalleryItem.Placeholder("2", "not a url", PlaceholderReason.NotUrl),
-            GalleryItem.Placeholder("3", "https://example.com/x", PlaceholderReason.NotImage),
+            GalleryItem.Placeholder("3", notImageUrl, PlaceholderReason.NotImage),
             GalleryItem.Placeholder("4", "https://example.com/y", PlaceholderReason.LoadFailed),
+            GalleryItem.Image("5", notImageUrl),
         ),
         isLoading = false,
     )
+
+    @Before
+    fun setUp() {
+        // Тест не должен зависеть от сети: Coil получает загрузчик, который
+        // всегда завершает запрос ошибкой, поэтому состояние ячейки
+        // детерминировано.
+        SingletonImageLoader.setSafe { context ->
+            ImageLoader.Builder(context)
+                .components {
+                    add(
+                        Fetcher.Factory<Uri> { data, _, _ ->
+                            FailingFetcher(
+                                if (data.toString() == notImageUrl) {
+                                    NotImageContentException()
+                                } else {
+                                    IOException("Network error")
+                                },
+                            )
+                        },
+                    )
+                }
+                .build()
+        }
+    }
 
     @Test
     fun `gallery light`() {
@@ -45,6 +86,7 @@ class GalleryScreenshotTest {
                 }
             }
         }
+        composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage("src/test/screenshots/gallery_light.png")
     }
 
@@ -61,6 +103,7 @@ class GalleryScreenshotTest {
                 }
             }
         }
+        composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage("src/test/screenshots/gallery_dark.png")
     }
 
@@ -78,5 +121,12 @@ class GalleryScreenshotTest {
             }
         }
         composeRule.onRoot().captureRoboImage("src/test/screenshots/gallery_loading.png")
+    }
+
+    /**
+     * Загрузчик, который всегда завершает запрос заданной ошибкой.
+     */
+    private class FailingFetcher(private val error: Throwable) : Fetcher {
+        override suspend fun fetch(): FetchResult = throw error
     }
 }
