@@ -2,7 +2,9 @@ package com.example.picturegrid.core.network
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
+import java.net.InetAddress
 
 /**
  * Проверки политики допустимых сетевых назначений.
@@ -128,6 +130,37 @@ class NetworkDestinationPolicyTest {
         assertFalse(policy.isAllowed("http://[::ffff:10.0.0.1]/photo.png"))
     }
 
+    // NAT64 и переходные механизмы.
+
+    @Test
+    fun `nat64 prefixes are rejected`() {
+        // Well-known префикс (RFC 6052) и local-use префикс (RFC 8215).
+        assertFalse(policy.isAllowed("http://[64:ff9b::7f00:1]/photo.png"))
+        assertFalse(policy.isAllowed("http://[64:ff9b:1::7f00:1]/photo.png"))
+        assertFalse(policy.isAllowed("http://[64:ff9b:1::c0a8:101]/photo.png"))
+    }
+
+    @Test
+    fun `ipv4 compatible ipv6 address is decided by the embedded address`() {
+        // Форма записи сама по себе не является признаком локального
+        // назначения: решение принимает вложенный IPv4-адрес.
+        assertFalse(policy.isAllowed("http://[::192.168.1.1]/photo.png"))
+        assertFalse(policy.isAllowed("http://[::127.0.0.1]/photo.png"))
+        assertTrue(policy.isAllowed("http://[::8.8.8.8]/photo.png"))
+    }
+
+    @Test
+    fun `special ipv6 ranges are rejected and public ones are allowed`() {
+        assertFalse(policy.isAllowed("http://[2001::1]/photo.png")) // Teredo
+        assertFalse(policy.isAllowed("http://[2001:db8::1]/photo.png")) // документация
+        assertFalse(policy.isAllowed("http://[2002:7f00:1::1]/photo.png")) // 6to4
+        assertFalse(policy.isAllowed("http://[fec0::1]/photo.png")) // site-local
+        assertFalse(policy.isAllowed("http://[3fff::1]/photo.png")) // документация
+        assertFalse(policy.isAllowed("http://[5f00::1]/photo.png")) // SRv6 SIDs
+        assertTrue(policy.isAllowed("http://[2001:4860:4860::8888]/photo.png"))
+        assertTrue(policy.isAllowed("http://[2606:4700::1111]/photo.png"))
+    }
+
     // Локальные имена.
 
     @Test
@@ -167,12 +200,30 @@ class NetworkDestinationPolicyTest {
     }
 
     @Test
-    fun `short and numeric ip representations are rejected`() {
-        // Сокращённые и целочисленные формы понимаются системным резолвером,
-        // поэтому распознаются и отклоняются политикой.
-        assertFalse(policy.isAllowed("http://127.1/photo.png"))
-        assertFalse(policy.isAllowed("http://2130706433/photo.png"))
-        assertFalse(policy.isAllowedAddress(java.net.InetAddress.getByName("127.1")))
-        assertFalse(policy.isAllowedAddress(java.net.InetAddress.getByName("2130706433")))
+    fun `loopback addresses are rejected regardless of the notation`() {
+        // Классификатор проверяется на синтетических адресах: результат не
+        // должен зависеть от системного резолвера и от наличия сети.
+        assertFalse(policy.isAllowedAddress(InetAddress.getByAddress(byteArrayOf(127.toByte(), 0, 0, 1))))
+        assertFalse(policy.isAllowedAddress(InetAddress.getByAddress(byteArrayOf(10, 0, 0, 1))))
+        assertFalse(
+            policy.isAllowedAddress(InetAddress.getByAddress(byteArrayOf(169.toByte(), 254.toByte(), 0, 1))),
+        )
+    }
+
+    @Test
+    fun `short and integer ip notations are rejected when the platform resolves them to loopback`() {
+        // Платформы по-разному трактуют сокращённые и целочисленные формы
+        // (inet_aton против inet_pton), поэтому проверяется инвариант: если
+        // система распознала форму как loopback, политика обязана её отклонить.
+        for (form in listOf("127.1", "2130706433")) {
+            val resolved = runCatching { InetAddress.getByName(form) }.getOrNull()
+            assumeTrue(
+                "платформа не распознаёт форму $form как loopback",
+                resolved != null && resolved.isLoopbackAddress,
+            )
+            val address = requireNotNull(resolved)
+            assertFalse("форма $form не должна быть разрешена", policy.isAllowedAddress(address))
+            assertFalse("форма $form не должна быть разрешена", policy.isAllowed("http://$form/photo.png"))
+        }
     }
 }
