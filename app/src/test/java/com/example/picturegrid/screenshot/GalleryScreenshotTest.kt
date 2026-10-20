@@ -124,6 +124,26 @@ class GalleryScreenshotTest {
     }
 
     /**
+     * Список получен, но пуст: показывается явное состояние, а не пустая сетка.
+     */
+    @Test
+    fun `gallery empty list`() {
+        composeRule.setContent {
+            PictureGridTheme(darkTheme = false, dynamicColor = false) {
+                Surface {
+                    GalleryContent(
+                        state = GalleryStore.State(items = emptyList(), isLoading = false),
+                        onRetry = {},
+                        onImageClick = {},
+                    )
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.onRoot().captureRoboImage("src/test/screenshots/gallery_empty.png")
+    }
+
+    /**
      * Загрузчик, который всегда завершает запрос заданной ошибкой.
      */
     private class FailingFetcher(private val error: Throwable) : Fetcher {

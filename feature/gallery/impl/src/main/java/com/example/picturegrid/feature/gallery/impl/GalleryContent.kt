@@ -58,6 +58,19 @@ fun GalleryContent(
                     }
                 }
             }
+            // Список получен, но не содержит ни одной строки: пустая сетка
+            // без объяснения выглядит как дефект, поэтому показываем явное
+            // состояние с возможностью обновить список.
+            state.items.isEmpty() -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    ColumnCentered {
+                        Text("Список пуст", textAlign = TextAlign.Center)
+                        Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) {
+                            Text("Обновить")
+                        }
+                    }
+                }
+            }
             else -> {
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 100.dp),

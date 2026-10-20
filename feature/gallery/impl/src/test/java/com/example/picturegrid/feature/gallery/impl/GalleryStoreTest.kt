@@ -129,6 +129,17 @@ class GalleryStoreTest {
     }
 
     @Test
+    fun `empty list is not an error`() = runTest {
+        val s = store(repo(cached = null, refreshResult = GalleryRefreshResult.Success(emptyList())))
+        s.init()
+        advanceUntilIdle()
+        assertTrue(s.state.items.isEmpty())
+        assertFalse(s.state.isLoading)
+        assertNull(s.state.error)
+        s.dispose()
+    }
+
+    @Test
     fun `retry intent triggers reload`() = runTest {
         var refreshCount = 0
         val repository = object : GalleryRepository {
