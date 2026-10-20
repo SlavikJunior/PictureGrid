@@ -13,16 +13,6 @@ sealed interface NetworkError {
      * oversized-ответ, поэтому автоматический retry не выполняется.
      */
     data class TooLarge(val limitBytes: Long) : NetworkError
-
-    /**
-     * Адрес назначения запрещён политикой [NetworkDestinationPolicy]
-     * (непубличный или локальный адрес, редирект на запрещённый адрес,
-     * понижение https → http).
-     *
-     * Повтор не поможет: адрес останется запрещённым, поэтому автоматический
-     * retry не выполняется.
-     */
-    data object ForbiddenDestination : NetworkError
 }
 
 /**
@@ -32,5 +22,4 @@ fun NetworkError.isRetryable(): Boolean = when (this) {
     NetworkError.Io, NetworkError.Timeout, NetworkError.EmptyBody -> true
     is NetworkError.Http -> code == 408 || code == 429 || code in 500..599
     is NetworkError.TooLarge -> false
-    NetworkError.ForbiddenDestination -> false
 }

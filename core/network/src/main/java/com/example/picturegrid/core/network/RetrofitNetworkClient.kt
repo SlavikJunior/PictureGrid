@@ -6,6 +6,7 @@ import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import retrofit2.Retrofit
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
@@ -77,8 +78,6 @@ class RetrofitNetworkClient(
             }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
-        } catch (e: ForbiddenDestinationException) {
-            NetworkResult.Failure(NetworkError.ForbiddenDestination)
         } catch (e: SocketTimeoutException) {
             NetworkResult.Failure(NetworkError.Timeout)
         } catch (e: IOException) {
@@ -97,40 +96,31 @@ class RetrofitNetworkClient(
          * @return байты тела либо `null`, если тело превысило лимит.
          */
         internal fun readLimited(body: ResponseBody, maxBytes: Long): ByteArray? {
-            val source = body.source()
             val limit = maxBytes.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-            var result = ByteArray(minOf(limit, INITIAL_CAPACITY))
-            var size = 0
-            val chunk = ByteArray(minOf(limit, READ_CHUNK_BYTES).coerceAtLeast(1))
+            val input = body.byteStream()
+            val output = ByteArrayOutputStream()
+            val chunk = ByteArray(READ_CHUNK_BYTES)
+            var total = 0
             while (true) {
-                val read = source.read(chunk, 0, chunk.size)
+                val read = input.read(chunk)
                 if (read == -1) break
-                if (size + read > limit) return null
-                if (size + read > result.size) {
-                    val grown = minOf(maxOf(result.size * 2, size + read), limit)
-                    result = result.copyOf(grown)
-                }
-                System.arraycopy(chunk, 0, result, size, read)
-                size += read
+                total += read
+                if (total > limit) return null
+                output.write(chunk, 0, read)
             }
-            return if (size == result.size) result else result.copyOf(size)
+            return output.toByteArray()
         }
 
         private const val READ_CHUNK_BYTES = 64 * 1024
-        private const val INITIAL_CAPACITY = 8 * 1024
 
         /**
-         * Клиент по умолчанию: таймауты и политика сетевых назначений.
-         *
-         * Политика включает проверку адреса назначения и контролируемую
-         * обработку редиректов; см. [applyNetworkPolicy].
+         * Клиент по умолчанию: таймауты соединения и чтения.
          */
         fun defaultOkHttpClient(): OkHttpClient =
             OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(15, TimeUnit.SECONDS)
                 .writeTimeout(15, TimeUnit.SECONDS)
-                .applyNetworkPolicy()
                 .build()
     }
 }
