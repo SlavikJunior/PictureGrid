@@ -147,5 +147,4 @@ private fun com.example.picturegrid.feature.gallery.api.GalleryError.toMessage()
     when (this) {
         is com.example.picturegrid.feature.gallery.api.GalleryError.Network -> "Network: ${message}"
         is com.example.picturegrid.feature.gallery.api.GalleryError.Storage -> "Storage: ${message}"
-        is com.example.picturegrid.feature.gallery.api.GalleryError.Cache -> message
     }

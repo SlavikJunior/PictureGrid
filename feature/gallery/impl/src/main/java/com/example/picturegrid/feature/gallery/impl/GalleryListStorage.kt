@@ -11,9 +11,6 @@ import java.nio.file.StandardCopyOption
  * Запись идёт через временный файл с последующим переименованием, поэтому
  * при ошибке записи ранее сохранённая версия не повреждается. Класс не
  * зависит от Android Context: путь передаётся явно, что упрощает тестирование.
- *
- * Чтение различает отсутствие файла, пригодное содержимое и повреждённый
- * файл: пустой или превышающий лимит файл не выдаётся за корректный список.
  */
 class GalleryListStorage(
     private val file: File,
@@ -22,26 +19,18 @@ class GalleryListStorage(
     /**
      * Читает сохранённый список.
      *
-     * @return состояние кэша; [GalleryListCache.Damaged] означает, что файл
-     *   существует, но использовать его как список нельзя.
+     * @return содержимое списка либо `null`, если файла нет или он не может
+     *   быть использован как список (пустой файл, ошибка чтения).
      */
-    fun read(): GalleryListCache {
-        if (!file.exists()) return GalleryListCache.Absent
-        if (!file.isFile) return GalleryListCache.Damaged
-        // Файл больше транспортного лимита не может быть корректным списком:
-        // список приходит из сети и не превышает GalleryListLimits.MAX_TEXT_BYTES.
-        if (file.length() > GalleryListLimits.MAX_TEXT_BYTES) return GalleryListCache.Damaged
+    fun read(): String? {
+        if (!file.exists() || !file.isFile) return null
         return try {
-            if (file.length() <= 0L) {
-                GalleryListCache.Damaged
-            } else {
-                val content = file.readText()
-                if (content.isBlank()) GalleryListCache.Damaged else GalleryListCache.Available(content)
-            }
+            val content = file.readText()
+            if (content.isBlank()) null else content
         } catch (e: IOException) {
-            GalleryListCache.Damaged
+            null
         } catch (e: SecurityException) {
-            GalleryListCache.Damaged
+            null
         }
     }
 

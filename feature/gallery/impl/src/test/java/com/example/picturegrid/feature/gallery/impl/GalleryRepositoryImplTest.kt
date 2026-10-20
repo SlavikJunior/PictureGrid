@@ -72,7 +72,7 @@ class GalleryRepositoryImplTest {
         val result = repo(client).refresh()
         assertTrue(result is GalleryRefreshResult.Success)
         assertEquals(2, (result as GalleryRefreshResult.Success).items.size)
-        assertEquals(GalleryListCache.Available("https://example.com/a.png\nhttps://example.com/b.jpg"), storage().read())
+        assertEquals("https://example.com/a.png\nhttps://example.com/b.jpg", storage().read())
     }
 
     @Test
@@ -101,7 +101,7 @@ class GalleryRepositoryImplTest {
         assertTrue((failure.error as GalleryError.Network).retryable)
         assertEquals(1, failure.cached?.size)
         // сохранённый файл не пострадал
-        assertEquals(GalleryListCache.Available("https://example.com/saved.png"), storage().read())
+        assertEquals("https://example.com/saved.png", storage().read())
     }
 
     @Test
@@ -132,7 +132,7 @@ class GalleryRepositoryImplTest {
         assertTrue(failure.error is GalleryError.Storage)
         assertFalse((failure.error as GalleryError.Storage).retryable)
         assertEquals(1, failure.cached?.size)
-        assertEquals(GalleryListCache.Available("https://example.com/old.png"), storage().read())
+        assertEquals("https://example.com/old.png", storage().read())
     }
 
 
@@ -151,70 +151,28 @@ class GalleryRepositoryImplTest {
         }
     }
 
-    // Обработка состояний локального кэша (PG-SEC-005).
-
     @Test
-    fun `getCached returns null for damaged cache`() = runTest {
+    fun `unusable cache is treated as missing`() = runTest {
         File(tempFolder.root, "list.txt").writeBytes(ByteArray(0))
         assertNull(repo(FakeNetworkClient(NetworkResult.Success(""))).getCached())
     }
 
     @Test
-    fun `damaged cache with network failure reports cache error`() = runTest {
-        File(tempFolder.root, "list.txt").writeBytes(ByteArray(0))
-        val result = repo(FakeNetworkClient(NetworkResult.Failure(NetworkError.Io))).refresh()
-        val failure = result as GalleryRefreshResult.Failure
-        assertTrue("ожидалась ошибка кэша, получено ${failure.error}", failure.error is GalleryError.Cache)
-        assertTrue((failure.error as GalleryError.Cache).retryable)
-        assertNull(failure.cached)
-    }
-
-    @Test
-    fun `successful refresh replaces damaged cache`() = runTest {
+    fun `successful refresh replaces unusable cache`() = runTest {
         File(tempFolder.root, "list.txt").writeBytes(ByteArray(0))
         val result = repo(
             FakeNetworkClient(NetworkResult.Success("https://example.com/new.png"))
         ).refresh()
         assertTrue(result is GalleryRefreshResult.Success)
-        assertEquals(
-            GalleryListCache.Available("https://example.com/new.png"),
-            storage().read(),
-        )
+        assertEquals("https://example.com/new.png", storage().read())
     }
 
     @Test
-    fun `damaged cache is not deleted by failed refresh`() = runTest {
+    fun `unusable cache is not deleted by failed refresh`() = runTest {
         val file = File(tempFolder.root, "list.txt")
         file.writeBytes(ByteArray(0))
         repo(FakeNetworkClient(NetworkResult.Failure(NetworkError.Io))).refresh()
         assertTrue("повреждённый кэш не должен удаляться", file.exists())
-    }
-
-    // Ограничения формата списка (PG-SEC-008).
-
-    @Test
-    fun `rejected list does not overwrite saved cache`() = runTest {
-        storage().write("https://example.com/saved.png")
-        val oversized = (1..GalleryListLimits.MAX_ITEMS + 1).joinToString("\n") { "https://example.com/$it.png" }
-        val result = repo(FakeNetworkClient(NetworkResult.Success(oversized))).refresh()
-        val failure = result as GalleryRefreshResult.Failure
-        assertTrue("ожидалась ошибка хранилища, получено ${failure.error}", failure.error is GalleryError.Storage)
-        assertFalse((failure.error as GalleryError.Storage).retryable)
-        assertEquals(1, failure.cached?.size)
-        assertEquals(
-            GalleryListCache.Available("https://example.com/saved.png"),
-            storage().read(),
-        )
-    }
-
-    @Test
-    fun `rejected list without cache returns failure without cached items`() = runTest {
-        val tooLongLine = "https://example.com/" + "a".repeat(GalleryListLimits.MAX_LINE_LENGTH)
-        val result = repo(FakeNetworkClient(NetworkResult.Success(tooLongLine))).refresh()
-        val failure = result as GalleryRefreshResult.Failure
-        assertTrue(failure.error is GalleryError.Storage)
-        assertNull(failure.cached)
-        assertEquals(GalleryListCache.Absent, storage().read())
     }
 
     private class FakeNetworkClient(

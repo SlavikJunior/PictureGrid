@@ -21,7 +21,7 @@ class GalleryListStorageConcurrencyTest {
         t1.join()
         t2.join()
 
-        val result = (storage.read() as? GalleryListCache.Available)?.content
+        val result = storage.read()
         assertTrue(result == "first content" || result == "second content")
         val remaining = tempFolder.root.listFiles()?.map { it.name } ?: emptyList()
         assertTrue("list.txt" in remaining)

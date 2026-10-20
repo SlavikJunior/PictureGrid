@@ -100,12 +100,12 @@ class GalleryStoreSyncTest {
     }
 
     @Test
-    fun `damaged cache error schedules sync to recover from network`() = runTest {
+    fun `network failure without cached list shows the error and schedules sync`() = runTest {
         var scheduled = 0
         val repository = object : GalleryRepository {
             override suspend fun getCached(): List<GalleryItem>? = null
             override suspend fun refresh(): GalleryRefreshResult =
-                GalleryRefreshResult.Failure(GalleryError.Cache("Сохранённый список повреждён"), null)
+                GalleryRefreshResult.Failure(GalleryError.Network("Network I/O error", retryable = true), null)
         }
         val store = GalleryStoreFactory(
             storeFactory = com.arkivanov.mvikotlin.main.store.DefaultStoreFactory(),
@@ -117,7 +117,7 @@ class GalleryStoreSyncTest {
         store.init()
         advanceUntilIdle()
         assertEquals(1, scheduled)
-        assertTrue("пользователь должен видеть причину", store.state.error?.contains("повреждён") == true)
+        assertTrue("пользователь должен видеть причину", store.state.error?.contains("Network") == true)
         store.dispose()
     }
 }
