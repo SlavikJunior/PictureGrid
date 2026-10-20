@@ -17,6 +17,9 @@ import java.security.MessageDigest
  * Запись идёт через временный файл с атомарным перемещением, поэтому
  * частичный файл никогда не становится доступным как готовый оригинал,
  * а предыдущая сохранённая копия не повреждается при неудачной записи.
+ *
+ * Каталог ограничен по объёму: при превышении квоты самые старые оригиналы
+ * удаляются, чтобы хранилище не разрасталось бесконечно.
  */
 interface ImageStorage {
 
@@ -40,6 +43,7 @@ interface ImageStorage {
 class ImageStorageImpl(
     private val directory: File,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val maxBytes: Long = DEFAULT_MAX_BYTES,
 ) : ImageStorage {
 
     override fun directory(): File = directory
@@ -82,6 +86,7 @@ class ImageStorageImpl(
                         return@withContext Result.failure(IOException("Cannot rename the temporary file", e))
                     }
                 }
+                evictOutdated(target)
                 Result.success(target)
             } catch (e: Exception) {
                 tmp.delete()
@@ -89,10 +94,39 @@ class ImageStorageImpl(
             }
         }
 
+    /**
+     * Удаляет самые старые оригиналы, пока каталог не уложится в квоту.
+     *
+     * Только что сохранённый файл не удаляется: он самый свежий, но
+     * пользователь запросил его именно сейчас.
+     */
+    private fun evictOutdated(keep: File) {
+        val files = directory.listFiles()
+            ?.filter { it.isFile && it != keep }
+            ?.sortedWith(compareBy({ it.lastModified() }, { it.name }))
+            ?: return
+        var total = files.sumOf { it.length() } + keep.length()
+        if (total <= maxBytes) return
+        for (file in files) {
+            if (total <= maxBytes) break
+            val size = file.length()
+            if (file.delete()) total -= size
+        }
+    }
+
     private fun fileFor(url: String): File =
         File(directory, storageKey(url) + ".img")
 
     companion object {
+        /**
+         * Квота каталога оригиналов: 200 МиБ.
+         *
+         * Достаточно для нескольких десятков фотографий в высоком
+         * разрешении и при этом ограничивает объём приватного хранилища
+         * приложения.
+         */
+        const val DEFAULT_MAX_BYTES: Long = 200L * 1024 * 1024
+
         fun storageKey(url: String): String {
             val digest = MessageDigest.getInstance("SHA-256")
             val bytes = digest.digest(url.toByteArray(Charsets.UTF_8))

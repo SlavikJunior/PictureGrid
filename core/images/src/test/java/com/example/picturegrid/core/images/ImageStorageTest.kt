@@ -93,4 +93,43 @@ class ImageStorageTest {
         val storage = storage()
         assertTrue(storage.delete("https://example.com/missing.png"))
     }
+
+    @Test
+    fun `oldest originals are removed when quota is exceeded`() {
+        val storage = ImageStorageImpl(
+            File(tempFolder.root, "quota"),
+            kotlinx.coroutines.Dispatchers.IO,
+            maxBytes = 150,
+        )
+        val first = kotlinx.coroutines.runBlocking {
+            storage.store("https://example.com/1.png", ByteArray(60)).getOrThrow()
+        }
+        val second = kotlinx.coroutines.runBlocking {
+            storage.store("https://example.com/2.png", ByteArray(60)).getOrThrow()
+        }
+        // Порядок вытеснения задаётся временем изменения файла.
+        first.setLastModified(1_000_000L)
+        second.setLastModified(2_000_000L)
+
+        val third = kotlinx.coroutines.runBlocking {
+            storage.store("https://example.com/3.png", ByteArray(60)).getOrThrow()
+        }
+
+        assertFalse("самый старый оригинал должен быть удалён", first.exists())
+        assertTrue("свежий оригинал должен остаться", second.exists())
+        assertTrue(third.exists())
+    }
+
+    @Test
+    fun `freshly stored file is never evicted`() {
+        val storage = ImageStorageImpl(
+            File(tempFolder.root, "small-quota"),
+            kotlinx.coroutines.Dispatchers.IO,
+            maxBytes = 10,
+        )
+        val file = kotlinx.coroutines.runBlocking {
+            storage.store("https://example.com/big.png", ByteArray(100)).getOrThrow()
+        }
+        assertTrue(file.exists())
+    }
 }
