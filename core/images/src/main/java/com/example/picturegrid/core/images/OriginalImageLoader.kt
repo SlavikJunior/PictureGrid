@@ -42,8 +42,11 @@ class OriginalImageLoader(
             when (val result = networkClient.fetchBytes(url)) {
                 is NetworkResult.Success -> {
                     val response: BinaryResponse = result.data
-                    if (!isAcceptableContentType(response.contentType)) {
-                        return@withLock Result.failure(IllegalArgumentException("Not an image: ${response.contentType}"))
+                    if (ImageContentClassifier.isNotImageContentType(response.contentType)) {
+                        // Текст ошибки не содержит значения ответа сервера:
+                        // причина не нужна пользователю и не должна попадать
+                        // в тексты ошибок приложения.
+                        return@withLock Result.failure(IllegalArgumentException("Not an image"))
                     }
                     if (!imageChecker.isImage(response.bytes)) {
                         return@withLock Result.failure(IllegalArgumentException("Invalid image data"))
@@ -55,15 +58,6 @@ class OriginalImageLoader(
                 }
             }
         }
-    }
-
-    private fun isAcceptableContentType(contentType: String?): Boolean {
-        if (contentType == null) return true // полагаемся на проверку байтов
-        val lower = contentType.lowercase()
-        if (lower.startsWith("text/")) return false
-        if (lower.startsWith("image/")) return true
-        // application/octet-stream и прочее — проверяем по байтам.
-        return true
     }
 
     private fun NetworkError.toMessage(): String = when (this) {

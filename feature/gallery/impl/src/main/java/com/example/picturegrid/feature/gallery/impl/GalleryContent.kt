@@ -115,7 +115,7 @@ private fun ImageCell(
     modifier: Modifier = Modifier,
 ) {
     var retryKey by remember { mutableIntStateOf(0) }
-    var isError by remember { mutableStateOf(false) }
+    var failure by remember { mutableStateOf<ImageCellFailure?>(null) }
     Box(modifier.fillMaxSize().clickable { onImageClick(item.source) }) {
         key(retryKey) {
             AsyncImage(
@@ -124,17 +124,25 @@ private fun ImageCell(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
                 onState = { state ->
-                    isError = state is coil3.compose.AsyncImagePainter.State.Error
+                    failure = if (state is coil3.compose.AsyncImagePainter.State.Error) {
+                        classifyImageCellFailure(state.result.throwable)
+                    } else {
+                        null
+                    }
                 },
             )
         }
-        if (isError) {
-            Button(
-                onClick = { retryKey++; isError = false },
+        when (failure) {
+            // Ресурс не является изображением: повтор ничего не изменит,
+            // поэтому показывается заглушка, а не кнопка «Повторить».
+            ImageCellFailure.NotImage -> PlaceholderCell(reason = PlaceholderReason.NotImage)
+            ImageCellFailure.LoadFailed -> Button(
+                onClick = { retryKey++; failure = null },
                 modifier = Modifier.align(Alignment.Center),
             ) {
                 Text("Повторить")
             }
+            null -> Unit
         }
     }
 }

@@ -9,6 +9,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -59,6 +60,31 @@ class ImageLoaderNetworkTest {
         assertFalse(
             "ошибка не должна быть сетевой: ${error?.throwable}",
             error?.throwable is IOException,
+        )
+    }
+
+    @Test
+    fun `response that is not an image is reported as not an image`() = runBlocking {
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("<html><body>not an image</body></html>")
+                .addHeader("Content-Type", "text/html; charset=utf-8"),
+        )
+        val context: Context = org.robolectric.RuntimeEnvironment.getApplication()
+        val loader = ImageLoaderFactory.create(context)
+
+        val request = ImageRequest.Builder(context)
+            .data(server.url("/page.html").toString())
+            .size(64)
+            .build()
+        val result = loader.execute(request)
+
+        val error = result as? ErrorResult
+        assertNotNull("ожидался результат с ошибкой, получено $result", error)
+        assertTrue(
+            "ожидалась NotImageContentException, получено ${error?.throwable}",
+            error?.throwable is NotImageContentException,
         )
     }
 }
