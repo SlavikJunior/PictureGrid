@@ -16,8 +16,22 @@ class GalleryListStorage(
     private val file: File,
 ) {
 
+    /**
+     * Читает сохранённый список.
+     *
+     * @return содержимое списка либо `null`, если файла нет или он не может
+     *   быть использован как список (пустой файл, ошибка чтения).
+     */
     fun read(): String? {
-        return if (file.exists()) file.readText() else null
+        if (!file.exists() || !file.isFile) return null
+        return try {
+            val content = file.readText()
+            if (content.isBlank()) null else content
+        } catch (e: IOException) {
+            null
+        } catch (e: SecurityException) {
+            null
+        }
     }
 
     @Throws(IOException::class)
@@ -32,7 +46,7 @@ class GalleryListStorage(
     private fun writeLocked(content: String) {
         val parent = file.parentFile
         if (parent != null && !parent.exists() && !parent.mkdirs()) {
-            throw IOException("Cannot create directory: ${parent.absolutePath}")
+            throw IOException("Cannot create directory for the list file")
         }
         val tmp = File(parent, file.name + ".tmp")
         tmp.writeText(content)
@@ -44,13 +58,12 @@ class GalleryListStorage(
                 StandardCopyOption.ATOMIC_MOVE,
             )
         } catch (e: Exception) {
-            if (file.exists() && !file.delete()) {
-                tmp.delete()
-                throw IOException("Cannot replace file: ${file.absolutePath}", e)
-            }
+            // ATOMIC_MOVE может не поддерживаться на некоторых ФС.
+            // Обычное переименование заменяет файл целиком и сохраняет
+            // предыдущую версию, если переименование не удалось.
             if (!tmp.renameTo(file)) {
                 tmp.delete()
-                throw IOException("Cannot rename temp file to: ${file.absolutePath}", e)
+                throw IOException("Cannot replace the list file", e)
             }
         }
     }

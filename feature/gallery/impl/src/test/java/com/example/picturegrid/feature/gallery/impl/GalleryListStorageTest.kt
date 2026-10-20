@@ -26,7 +26,10 @@ class GalleryListStorageTest {
     fun `write then read roundtrip`() {
         val s = storage()
         s.write("https://example.com/a.png\nhttps://example.com/b.jpg")
-        assertEquals("https://example.com/a.png\nhttps://example.com/b.jpg", s.read())
+        assertEquals(
+            "https://example.com/a.png\nhttps://example.com/b.jpg",
+            s.read(),
+        )
     }
 
     @Test
@@ -69,5 +72,42 @@ class GalleryListStorageTest {
             // expected
         }
         assertTrue(blocker.exists())
+    }
+
+    @Test
+    fun `empty file is not usable as a list`() {
+        val file = File(tempFolder.root, "list.txt")
+        file.writeBytes(ByteArray(0))
+        assertNull(storage().read())
+    }
+
+    @Test
+    fun `blank file is not usable as a list`() {
+        val file = File(tempFolder.root, "list.txt")
+        file.writeText("\n   \n\t")
+        assertNull(storage().read())
+    }
+
+    @Test
+    fun `file with content but no valid items stays readable`() {
+        val file = File(tempFolder.root, "list.txt")
+        file.writeText("not a url\nanother text")
+        assertEquals("not a url\nanother text", storage().read())
+    }
+
+    @Test
+    fun `unreadable path is not usable as a list`() {
+        val directory = tempFolder.newFolder("list.txt")
+        assertNull(GalleryListStorage(directory).read())
+    }
+
+    @Test
+    fun `unusable cache is not silently replaced by empty data`() {
+        val file = File(tempFolder.root, "list.txt")
+        file.writeBytes(ByteArray(0))
+        val s = storage()
+        assertNull(s.read())
+        // Повторное чтение даёт тот же результат: данные не появляются и не исчезают.
+        assertNull(s.read())
     }
 }

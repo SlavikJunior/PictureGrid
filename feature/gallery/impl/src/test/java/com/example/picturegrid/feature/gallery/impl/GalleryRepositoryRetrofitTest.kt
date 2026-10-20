@@ -27,17 +27,18 @@ class GalleryRepositoryRetrofitTest {
 
     private fun storage() = GalleryListStorage(File(tempFolder.root, "list.txt"))
 
+    private fun repo(storage: GalleryListStorage) = GalleryRepositoryImpl(
+        networkClient = RetrofitNetworkClient(baseUrl = server.url("/").toString()),
+        storage = storage,
+        url = server.url("/images.txt").toString(),
+        ioDispatcher = testDispatcher,
+    )
+
     @Test
     fun `refresh succeeds through Retrofit client`() = runTest(testDispatcher) {
         server.enqueue(MockResponse().setResponseCode(200).setBody("https://example.com/a.png\nhttps://example.com/b.jpg"))
         val storage = storage()
-        val repo = GalleryRepositoryImpl(
-            networkClient = RetrofitNetworkClient(baseUrl = server.url("/").toString()),
-            storage = storage,
-            url = server.url("/images.txt").toString(),
-            ioDispatcher = testDispatcher,
-        )
-        val result = repo.refresh()
+        val result = repo(storage).refresh()
         assertTrue(result is GalleryRefreshResult.Success)
         assertEquals(2, (result as GalleryRefreshResult.Success).items.size)
         assertEquals("https://example.com/a.png\nhttps://example.com/b.jpg", storage.read())
@@ -48,13 +49,7 @@ class GalleryRepositoryRetrofitTest {
         storage().write("https://example.com/saved.png")
         server.enqueue(MockResponse().setResponseCode(500))
         val storage = storage()
-        val repo = GalleryRepositoryImpl(
-            networkClient = RetrofitNetworkClient(baseUrl = server.url("/").toString()),
-            storage = storage,
-            url = server.url("/images.txt").toString(),
-            ioDispatcher = testDispatcher,
-        )
-        val result = repo.refresh()
+        val result = repo(storage).refresh()
         assertTrue(result is GalleryRefreshResult.Failure)
         val failure = result as GalleryRefreshResult.Failure
         assertEquals(1, failure.cached?.size)
@@ -66,13 +61,7 @@ class GalleryRepositoryRetrofitTest {
     fun `refresh returns non retryable failure on 404 through Retrofit client`() = runTest(testDispatcher) {
         server.enqueue(MockResponse().setResponseCode(404))
         val storage = storage()
-        val repo = GalleryRepositoryImpl(
-            networkClient = RetrofitNetworkClient(baseUrl = server.url("/").toString()),
-            storage = storage,
-            url = server.url("/images.txt").toString(),
-            ioDispatcher = testDispatcher,
-        )
-        val result = repo.refresh()
+        val result = repo(storage).refresh()
         assertTrue(result is GalleryRefreshResult.Failure)
         val failure = result as GalleryRefreshResult.Failure
         assertFalse((failure.error as GalleryError.Network).retryable)

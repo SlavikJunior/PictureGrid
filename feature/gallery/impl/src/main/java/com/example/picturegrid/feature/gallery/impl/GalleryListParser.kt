@@ -11,21 +11,26 @@ import java.net.URI
  * [GalleryItem.Image] (кандидатами в изображение; тип ресурса уточняется
  * при загрузке). Всё остальное — [GalleryItem.Placeholder] с причиной
  * [PlaceholderReason.NotUrl]. Тип ресурса не определяется по расширению.
+ *
+ * Порядок строк сохраняется, повторяющиеся строки получают разные
+ * идентификаторы. Объём текста ограничен транспортным лимитом
+ * (см. `com.example.picturegrid.core.network.NetworkLimits`), поэтому
+ * отдельных ограничений на число строк и их длину не требуется.
  */
 object GalleryListParser {
 
     fun parse(text: String): List<GalleryItem> {
         val occurrences = mutableMapOf<String, Int>()
-        return text.lineSequence()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .map { line ->
-                val occurrence = occurrences.getOrDefault(line, 0)
-                occurrences[line] = occurrence + 1
-                val id = if (occurrence == 0) line else "$line#$occurrence"
-                toItem(id, line)
-            }
-            .toList()
+        val items = mutableListOf<GalleryItem>()
+        for (rawLine in text.lineSequence()) {
+            val line = rawLine.trim()
+            if (line.isEmpty()) continue
+            val occurrence = occurrences.getOrDefault(line, 0)
+            occurrences[line] = occurrence + 1
+            val id = if (occurrence == 0) line else "$line#$occurrence"
+            items += toItem(id, line)
+        }
+        return items
     }
 
     private fun toItem(id: String, line: String): GalleryItem {

@@ -95,4 +95,17 @@ class GalleryListParserTest {
         assertEquals("https://example.com/b.jpg", items[1].id)
         assertEquals("https://example.com/a.png#1", items[2].id)
     }
+
+    @Test
+    fun `line without host is a placeholder and does not break the list`() {
+        // Кривые строки не отклоняют список: на их месте показывается
+        // заглушка, как и требуется для не-ссылок.
+        val items = GalleryListParser.parse(
+            "https://example.com/a.png\n::not a url::\nhttps://example.com/b.jpg"
+        )
+        assertEquals(3, items.size)
+        assertTrue(items[0] is GalleryItem.Image)
+        assertEquals(PlaceholderReason.NotUrl, (items[1] as GalleryItem.Placeholder).reason)
+        assertTrue(items[2] is GalleryItem.Image)
+    }
 }

@@ -151,6 +151,30 @@ class GalleryRepositoryImplTest {
         }
     }
 
+    @Test
+    fun `unusable cache is treated as missing`() = runTest {
+        File(tempFolder.root, "list.txt").writeBytes(ByteArray(0))
+        assertNull(repo(FakeNetworkClient(NetworkResult.Success(""))).getCached())
+    }
+
+    @Test
+    fun `successful refresh replaces unusable cache`() = runTest {
+        File(tempFolder.root, "list.txt").writeBytes(ByteArray(0))
+        val result = repo(
+            FakeNetworkClient(NetworkResult.Success("https://example.com/new.png"))
+        ).refresh()
+        assertTrue(result is GalleryRefreshResult.Success)
+        assertEquals("https://example.com/new.png", storage().read())
+    }
+
+    @Test
+    fun `unusable cache is not deleted by failed refresh`() = runTest {
+        val file = File(tempFolder.root, "list.txt")
+        file.writeBytes(ByteArray(0))
+        repo(FakeNetworkClient(NetworkResult.Failure(NetworkError.Io))).refresh()
+        assertTrue("повреждённый кэш не должен удаляться", file.exists())
+    }
+
     private class FakeNetworkClient(
         private val result: NetworkResult<String>,
     ) : NetworkClient {
