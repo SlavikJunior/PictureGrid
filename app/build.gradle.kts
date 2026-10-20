@@ -69,7 +69,6 @@ dependencies {
     implementation(project(":feature:viewer:api"))
     implementation(project(":feature:viewer:impl"))
     implementation(project(":core:common"))
-    implementation(project(":core:network"))
     implementation(project(":core:images"))
     implementation(project(":core:navigation"))
     implementation(project(":core:designsystem"))
