@@ -36,10 +36,21 @@ android {
 }
 
 dependencies {
+    implementation(project(":feature:gallery:api"))
+    implementation(project(":feature:gallery:impl"))
+    implementation(project(":feature:viewer:api"))
+    implementation(project(":feature:viewer:impl"))
+    implementation(project(":core:common"))
+    implementation(project(":core:network"))
+    implementation(project(":core:images"))
+    implementation(project(":core:navigation"))
+    implementation(project(":core:designsystem"))
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.navigation3.ui)
 }
