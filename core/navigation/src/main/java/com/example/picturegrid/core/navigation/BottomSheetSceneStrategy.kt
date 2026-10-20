@@ -7,7 +7,11 @@ import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -15,6 +19,14 @@ import androidx.navigation3.scene.OverlayScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
+
+/**
+ * Управление листом, доступное из его содержимого.
+ *
+ * Вне листа значение равно `null`.
+ */
+val LocalBottomSheetController: ProvidableCompositionLocal<BottomSheetController?> =
+    staticCompositionLocalOf { null }
 
 /**
  * Стратегия, представляющая destination как Material 3 [ModalBottomSheet].
@@ -47,7 +59,17 @@ class BottomSheetSceneStrategy<T : Any> : SceneStrategy<T> {
                     shape = shape,
                     dragHandle = null,
                 ) {
-                    entry.Content()
+                    // Содержимое листа находится в отдельном окне: системные
+                    // панели управляются именно этим окном.
+                    val view = LocalView.current
+                    val controller = remember(sheetState, view) {
+                        BottomSheetController(sheetState, view)
+                    }
+                    CompositionLocalProvider(
+                        LocalBottomSheetController provides controller,
+                    ) {
+                        entry.Content()
+                    }
                 }
             }
         }

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pinch
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import com.example.picturegrid.core.designsystem.PictureGridTheme
 import com.example.picturegrid.feature.viewer.impl.ViewerContent
@@ -72,6 +73,18 @@ class ViewerGestureTest {
         assertTrue(
             "Ожидалось переключение масштаба",
             intents.any { it is ViewerStore.Intent.ToggleZoom },
+        )
+    }
+
+    @Test
+    fun `single tap toggles fullscreen`() {
+        setContent()
+        composeRule.onRoot().performTouchInput { click(Offset(200f, 400f)) }
+        // Одиночное нажатие срабатывает после таймаута двойного нажатия.
+        composeRule.mainClock.advanceTimeBy(1_000)
+        assertTrue(
+            "Ожидалось переключение полноэкранного режима",
+            intents.any { it is ViewerStore.Intent.ToggleFullscreen },
         )
     }
 }

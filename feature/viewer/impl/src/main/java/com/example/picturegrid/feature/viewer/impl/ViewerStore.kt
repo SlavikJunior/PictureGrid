@@ -20,6 +20,7 @@ interface ViewerStore : Store<ViewerStore.Intent, ViewerStore.State, Nothing> {
         val file: File? = null,
         val error: String? = null,
         val zoom: Zoom = Zoom(),
+        val isFullscreen: Boolean = false,
     )
 
     /**
@@ -58,6 +59,9 @@ interface ViewerStore : Store<ViewerStore.Intent, ViewerStore.State, Nothing> {
 
         /** Двойное нажатие: переключение между исходным и увеличенным масштабом. */
         data object ToggleZoom : Intent
+
+        /** Нажатие по изображению или пустому месту: переключение полноэкранного режима. */
+        data object ToggleFullscreen : Intent
     }
 }
 
@@ -84,6 +88,7 @@ class ViewerStoreFactory(
         data class Loaded(val file: File) : Msg
         data class Failed(val message: String) : Msg
         data class Zoomed(val zoom: ViewerStore.Zoom) : Msg
+        data class FullscreenChanged(val isFullscreen: Boolean) : Msg
     }
 
     private object ReducerImpl : Reducer<ViewerStore.State, Msg> {
@@ -93,6 +98,7 @@ class ViewerStoreFactory(
             is Msg.Loaded -> copy(isLoading = false, file = msg.file, error = null, zoom = ViewerStore.Zoom())
             is Msg.Failed -> copy(isLoading = false, error = msg.message)
             is Msg.Zoomed -> copy(zoom = msg.zoom)
+            is Msg.FullscreenChanged -> copy(isFullscreen = msg.isFullscreen)
         }
     }
 
@@ -125,6 +131,9 @@ class ViewerStoreFactory(
                     ),
                 )
                 ViewerStore.Intent.ToggleZoom -> dispatch(Msg.Zoomed(ViewerZoom.toggle(state().zoom)))
+                ViewerStore.Intent.ToggleFullscreen -> dispatch(
+                    Msg.FullscreenChanged(!state().isFullscreen),
+                )
             }
         }
 

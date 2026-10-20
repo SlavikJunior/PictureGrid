@@ -1,7 +1,9 @@
 package com.example.picturegrid.feature.viewer.impl
 
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -10,7 +12,9 @@ import androidx.compose.ui.Modifier
 import com.arkivanov.mvikotlin.core.rx.Observer
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import com.example.picturegrid.core.images.OriginalImageLoaderFactory
+import com.example.picturegrid.core.navigation.LocalBottomSheetController
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewerScreen(
     url: String,
@@ -31,6 +35,15 @@ fun ViewerScreen(
         })
         onDispose { disposable.dispose() }
     }
+
+    // Полноэкранный режим: лист раскрывается, системные панели скрываются.
+    // Лист живёт в отдельном окне, поэтому управление им принадлежит
+    // модулю навигации, а не слою приложения.
+    val sheetController = LocalBottomSheetController.current
+    LaunchedEffect(state.isFullscreen) {
+        sheetController?.setFullscreen(state.isFullscreen)
+    }
+
     ViewerContent(
         state = state,
         onIntent = { store.accept(it) },

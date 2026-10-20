@@ -46,10 +46,13 @@ fun ViewerContent(
     // MaterialTheme в светлой и тёмной темах.
     Surface(modifier = modifier, color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize()) {
-            ViewerActions(
-                onShare = { onShare(state.url) },
-                onOpenInBrowser = { onOpenInBrowser(state.url) },
-            )
+            // В полноэкранном режиме панель действий скрыта.
+            if (!state.isFullscreen) {
+                ViewerActions(
+                    onShare = { onShare(state.url) },
+                    onOpenInBrowser = { onOpenInBrowser(state.url) },
+                )
+            }
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 when {
                     state.isLoading && state.file == null -> CircularProgressIndicator()
@@ -137,7 +140,10 @@ private fun ZoomableImage(
                 containerHeight = size.height.toFloat()
             }
             .pointerInput(Unit) {
-                detectTapGestures(onDoubleTap = { currentIntent(ViewerStore.Intent.ToggleZoom) })
+                detectTapGestures(
+                    onTap = { currentIntent(ViewerStore.Intent.ToggleFullscreen) },
+                    onDoubleTap = { currentIntent(ViewerStore.Intent.ToggleZoom) },
+                )
             }
             .transformable(transformableState),
         contentAlignment = Alignment.Center,

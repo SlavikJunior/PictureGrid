@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -121,6 +122,50 @@ class ViewerStoreTest {
         advanceUntilIdle()
         assertNull(s.state.error)
         assertNotNull(s.state.file)
+        s.dispose()
+    }
+
+    @Test
+    fun `fullscreen toggles on tap`() = runTest(testDispatcher) {
+        val client = mutableClient(NetworkResult.Success(BinaryResponse(validPng, "image/png")))
+        val s = store(client)
+        s.init()
+        advanceUntilIdle()
+        assertFalse(s.state.isFullscreen)
+        s.accept(ViewerStore.Intent.ToggleFullscreen)
+        advanceUntilIdle()
+        assertTrue(s.state.isFullscreen)
+        s.accept(ViewerStore.Intent.ToggleFullscreen)
+        advanceUntilIdle()
+        assertFalse(s.state.isFullscreen)
+        s.dispose()
+    }
+
+    @Test
+    fun `new image resets zoom`() = runTest(testDispatcher) {
+        val client = mutableClient(NetworkResult.Success(BinaryResponse(validPng, "image/png")))
+        val s = store(client)
+        s.init()
+        advanceUntilIdle()
+        s.accept(
+            ViewerStore.Intent.ZoomGesture(
+                zoomChange = 2f,
+                panX = 0f,
+                panY = 0f,
+                centroidX = 0f,
+                centroidY = 0f,
+                containerWidth = 100f,
+                containerHeight = 100f,
+                imageWidth = 100f,
+                imageHeight = 100f,
+            ),
+        )
+        advanceUntilIdle()
+        assertTrue(s.state.zoom.scale > 1f)
+        // Повторная загрузка показывает оригинал в исходном масштабе.
+        s.accept(ViewerStore.Intent.Retry)
+        advanceUntilIdle()
+        assertEquals(1f, s.state.zoom.scale, 0.001f)
         s.dispose()
     }
 }
