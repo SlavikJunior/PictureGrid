@@ -5,8 +5,9 @@ import coil3.ImageLoader
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import com.example.picturegrid.core.network.NetworkLimits
+import com.example.picturegrid.core.network.applyNetworkPolicy
 import okhttp3.OkHttpClient
-import java.io.File
 import okio.Path.Companion.toPath
 
 /**
@@ -15,12 +16,25 @@ import okio.Path.Companion.toPath
  * Использование одного экземпляра исключает несколько независимых кэшей.
  * Memory cache и disk cache настраиваются явно: превью Coil остаются кэшем
  * UI, а гарантированное хранение оригиналов выполняется через [ImageStorage].
+ *
+ * Объём загружаемого изображения ограничен [NetworkLimits.MAX_BINARY_BYTES]:
+ * ограничение действует на поток ответа, поэтому не зависит от заголовков.
+ * Размер превью дополнительно ограничивается самим Coil: запрос выполняется
+ * с `ConstraintsSizeResolver`, то есть декодируется под размер ячейки, а не
+ * в оригинальном разрешении.
+ *
+ * Клиент Coil — отдельный экземпляр [okhttp3.OkHttpClient], поэтому политика
+ * сетевых назначений подключается к нему явно: защита клиента сетевого слоя
+ * не распространяется на Coil автоматически.
  */
 object ImageLoaderFactory {
 
     fun create(context: Context): ImageLoader {
         val appContext = context.applicationContext
-        val okHttpClient = OkHttpClient()
+        val okHttpClient = OkHttpClient.Builder()
+            .applyNetworkPolicy()
+            .addInterceptor(ResponseSizeLimitInterceptor(NetworkLimits.MAX_BINARY_BYTES))
+            .build()
         return ImageLoader.Builder(appContext)
             .memoryCache {
                 MemoryCache.Builder()
