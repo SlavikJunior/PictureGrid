@@ -77,7 +77,7 @@ class GalleryRepositoryConcurrencyTest {
             assertTrue(secondResult is GalleryRefreshResult.Success)
         }
 
-        val stored = storage.read()
+        val stored = (storage.read() as? GalleryListCache.Available)?.content
         assertTrue(stored == "first content" || stored == "second content")
     }
 }

@@ -143,6 +143,7 @@ private fun PlaceholderCell(
         PlaceholderReason.NotUrl -> "Не ссылка"
         PlaceholderReason.NotImage -> "Не изображение"
         PlaceholderReason.LoadFailed -> "Ошибка загрузки"
+        PlaceholderReason.ForbiddenDestination -> "Запрещённый адрес"
     }
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(text = label, textAlign = TextAlign.Center)

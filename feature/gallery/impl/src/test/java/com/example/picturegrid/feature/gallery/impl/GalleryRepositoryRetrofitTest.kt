@@ -1,6 +1,10 @@
 package com.example.picturegrid.feature.gallery.impl
 
+import com.example.picturegrid.core.network.NetworkDestinationPolicy
 import com.example.picturegrid.core.network.RetrofitNetworkClient
+import com.example.picturegrid.core.network.applyNetworkPolicy
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.OkHttpClient
 import com.example.picturegrid.feature.gallery.api.GalleryError
 import com.example.picturegrid.feature.gallery.api.GalleryRefreshResult
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -14,6 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.net.InetAddress
 
 class GalleryRepositoryRetrofitTest {
 
@@ -32,7 +37,12 @@ class GalleryRepositoryRetrofitTest {
         server.enqueue(MockResponse().setResponseCode(200).setBody("https://example.com/a.png\nhttps://example.com/b.jpg"))
         val storage = storage()
         val repo = GalleryRepositoryImpl(
-            networkClient = RetrofitNetworkClient(baseUrl = server.url("/").toString()),
+            networkClient = RetrofitNetworkClient(
+                // MockWebServer слушает loopback, который production-политика
+                // блокирует: тест явно разрешает обращения к своему серверу.
+                okHttpClient = OkHttpClient.Builder().applyNetworkPolicy(AllowLocalhostPolicy).build(),
+                baseUrl = server.url("/").toString(),
+            ),
             storage = storage,
             url = server.url("/images.txt").toString(),
             ioDispatcher = testDispatcher,
@@ -40,7 +50,7 @@ class GalleryRepositoryRetrofitTest {
         val result = repo.refresh()
         assertTrue(result is GalleryRefreshResult.Success)
         assertEquals(2, (result as GalleryRefreshResult.Success).items.size)
-        assertEquals("https://example.com/a.png\nhttps://example.com/b.jpg", storage.read())
+        assertEquals(GalleryListCache.Available("https://example.com/a.png\nhttps://example.com/b.jpg"), storage.read())
     }
 
     @Test
@@ -49,7 +59,12 @@ class GalleryRepositoryRetrofitTest {
         server.enqueue(MockResponse().setResponseCode(500))
         val storage = storage()
         val repo = GalleryRepositoryImpl(
-            networkClient = RetrofitNetworkClient(baseUrl = server.url("/").toString()),
+            networkClient = RetrofitNetworkClient(
+                // MockWebServer слушает loopback, который production-политика
+                // блокирует: тест явно разрешает обращения к своему серверу.
+                okHttpClient = OkHttpClient.Builder().applyNetworkPolicy(AllowLocalhostPolicy).build(),
+                baseUrl = server.url("/").toString(),
+            ),
             storage = storage,
             url = server.url("/images.txt").toString(),
             ioDispatcher = testDispatcher,
@@ -59,7 +74,7 @@ class GalleryRepositoryRetrofitTest {
         val failure = result as GalleryRefreshResult.Failure
         assertEquals(1, failure.cached?.size)
         assertTrue((failure.error as GalleryError.Network).retryable)
-        assertEquals("https://example.com/saved.png", storage.read())
+        assertEquals(GalleryListCache.Available("https://example.com/saved.png"), storage.read())
     }
 
     @Test
@@ -67,7 +82,12 @@ class GalleryRepositoryRetrofitTest {
         server.enqueue(MockResponse().setResponseCode(404))
         val storage = storage()
         val repo = GalleryRepositoryImpl(
-            networkClient = RetrofitNetworkClient(baseUrl = server.url("/").toString()),
+            networkClient = RetrofitNetworkClient(
+                // MockWebServer слушает loopback, который production-политика
+                // блокирует: тест явно разрешает обращения к своему серверу.
+                okHttpClient = OkHttpClient.Builder().applyNetworkPolicy(AllowLocalhostPolicy).build(),
+                baseUrl = server.url("/").toString(),
+            ),
             storage = storage,
             url = server.url("/images.txt").toString(),
             ioDispatcher = testDispatcher,
@@ -76,5 +96,18 @@ class GalleryRepositoryRetrofitTest {
         assertTrue(result is GalleryRefreshResult.Failure)
         val failure = result as GalleryRefreshResult.Failure
         assertFalse((failure.error as GalleryError.Network).retryable)
+    }
+
+    /**
+     * Разрешает обращения к локальному MockWebServer.
+     *
+     * Production-политика блокирует loopback, поэтому тест явно выбирает
+     * разрешающее поведение для собственного сервера.
+     */
+    private object AllowLocalhostPolicy : NetworkDestinationPolicy {
+        override fun isAllowed(url: String): Boolean =
+            runCatching { url.toHttpUrlOrNull() }.getOrNull() != null
+
+        override fun isAllowedAddress(address: InetAddress): Boolean = true
     }
 }

@@ -98,4 +98,26 @@ class GalleryStoreSyncTest {
         assertEquals(0, scheduled)
         store.dispose()
     }
+
+    @Test
+    fun `damaged cache error schedules sync to recover from network`() = runTest {
+        var scheduled = 0
+        val repository = object : GalleryRepository {
+            override suspend fun getCached(): List<GalleryItem>? = null
+            override suspend fun refresh(): GalleryRefreshResult =
+                GalleryRefreshResult.Failure(GalleryError.Cache("Сохранённый список повреждён"), null)
+        }
+        val store = GalleryStoreFactory(
+            storeFactory = com.arkivanov.mvikotlin.main.store.DefaultStoreFactory(),
+            repository = repository,
+            ioDispatcher = testDispatcher,
+            mainDispatcher = testDispatcher,
+            syncScheduler = { scheduled++ },
+        ).create()
+        store.init()
+        advanceUntilIdle()
+        assertEquals(1, scheduled)
+        assertTrue("пользователь должен видеть причину", store.state.error?.contains("повреждён") == true)
+        store.dispose()
+    }
 }
