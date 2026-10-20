@@ -1,6 +1,9 @@
 package com.example.picturegrid
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -34,11 +37,41 @@ class MainActivity : ComponentActivity() {
                         entry<ViewerRoute>(
                             metadata = BottomSheetSceneStrategy.bottomSheet(),
                         ) { key ->
-                            ViewerScreen(url = key.url)
+                            ViewerScreen(
+                                url = key.url,
+                                onShare = { url -> startShare(url) },
+                                onOpenInBrowser = { url -> startOpenInBrowser(url) },
+                            )
                         }
                     },
                 )
             }
+        }
+    }
+
+    /**
+     * Отправка ссылки другим приложениям.
+     */
+    private fun startShare(url: String) {
+        val chooser = Intent.createChooser(ShareIntents.createShare(url), null)
+        startActivitySafely(chooser) { "Нет приложения для отправки ссылки" }
+    }
+
+    /**
+     * Открытие ссылки в браузере.
+     */
+    private fun startOpenInBrowser(url: String) {
+        startActivitySafely(ShareIntents.createOpenInBrowser(url)) { "Нет приложения для открытия ссылки" }
+    }
+
+    /**
+     * Запуск действия с понятным сообщением, если подходящего приложения нет.
+     */
+    private fun startActivitySafely(intent: Intent, errorMessage: () -> String) {
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(this, errorMessage(), Toast.LENGTH_SHORT).show()
         }
     }
 }

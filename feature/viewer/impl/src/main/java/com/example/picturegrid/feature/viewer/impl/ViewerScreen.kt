@@ -15,6 +15,8 @@ import com.example.picturegrid.core.images.OriginalImageLoaderFactory
 fun ViewerScreen(
     url: String,
     loader: com.example.picturegrid.core.images.OriginalImageLoader? = null,
+    onShare: (String) -> Unit = {},
+    onOpenInBrowser: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -32,6 +34,8 @@ fun ViewerScreen(
     ViewerContent(
         state = state,
         onIntent = { store.accept(it) },
+        onShare = onShare,
+        onOpenInBrowser = onOpenInBrowser,
         modifier = modifier,
     )
 }

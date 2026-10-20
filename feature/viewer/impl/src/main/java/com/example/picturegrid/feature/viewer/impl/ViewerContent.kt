@@ -3,15 +3,19 @@ package com.example.picturegrid.feature.viewer.impl
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,28 +38,58 @@ import java.io.File
 fun ViewerContent(
     state: ViewerStore.State,
     onIntent: (ViewerStore.Intent) -> Unit,
+    onShare: (String) -> Unit = {},
+    onOpenInBrowser: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     // Фон рисует Compose, а не окно: так фон просмотра совпадает с
     // MaterialTheme в светлой и тёмной темах.
     Surface(modifier = modifier, color = MaterialTheme.colorScheme.background) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            when {
-                state.isLoading && state.file == null -> CircularProgressIndicator()
-                state.error != null && state.file == null -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(state.error, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
-                        Button(onClick = { onIntent(ViewerStore.Intent.Retry) }, modifier = Modifier.padding(top = 12.dp)) {
-                            Text("Повторить")
+        Column(Modifier.fillMaxSize()) {
+            ViewerActions(
+                onShare = { onShare(state.url) },
+                onOpenInBrowser = { onOpenInBrowser(state.url) },
+            )
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                when {
+                    state.isLoading && state.file == null -> CircularProgressIndicator()
+                    state.error != null && state.file == null -> {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(state.error, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
+                            Button(onClick = { onIntent(ViewerStore.Intent.Retry) }, modifier = Modifier.padding(top = 12.dp)) {
+                                Text("Повторить")
+                            }
                         }
                     }
+                    state.file != null -> ZoomableImage(
+                        file = state.file,
+                        zoom = state.zoom,
+                        onIntent = onIntent,
+                    )
                 }
-                state.file != null -> ZoomableImage(
-                    file = state.file,
-                    zoom = state.zoom,
-                    onIntent = onIntent,
-                )
             }
+        }
+    }
+}
+
+/**
+ * Действия с изображением: поделиться ссылкой и открыть её в браузере.
+ */
+@Composable
+private fun ViewerActions(
+    onShare: () -> Unit,
+    onOpenInBrowser: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        TextButton(onClick = onShare) {
+            Text("Поделиться")
+        }
+        TextButton(onClick = onOpenInBrowser) {
+            Text("В браузере")
         }
     }
 }
