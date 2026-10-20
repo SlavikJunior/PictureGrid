@@ -8,9 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import coil3.SingletonImageLoader
 import com.example.picturegrid.core.designsystem.PictureGridTheme
-import com.example.picturegrid.core.images.ImageLoaderFactory
 import com.example.picturegrid.core.navigation.BottomSheetSceneStrategy
 import com.example.picturegrid.core.navigation.PictureGridSceneStrategy
 import com.example.picturegrid.core.navigation.GalleryRoute
@@ -23,7 +21,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        SingletonImageLoader.setSafe { context -> ImageLoaderFactory.create(context) }
         setContent {
             PictureGridTheme {
                 val backStack = rememberNavBackStack(GalleryRoute)
