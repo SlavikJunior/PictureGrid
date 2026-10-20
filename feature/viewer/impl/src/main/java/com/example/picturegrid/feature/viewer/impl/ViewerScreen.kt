@@ -31,7 +31,7 @@ fun ViewerScreen(
     }
     ViewerContent(
         state = state,
-        onRetry = { store.accept(ViewerStore.Intent.Retry) },
+        onIntent = { store.accept(it) },
         modifier = modifier,
     )
 }

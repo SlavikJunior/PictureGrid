@@ -19,10 +19,45 @@ interface ViewerStore : Store<ViewerStore.Intent, ViewerStore.State, Nothing> {
         val isLoading: Boolean = true,
         val file: File? = null,
         val error: String? = null,
+        val zoom: Zoom = Zoom(),
+    )
+
+    /**
+     * Масштаб и смещение изображения.
+     *
+     * Смещение задаётся в пикселях контейнера: правила ограничения описаны
+     * в [ViewerZoom].
+     */
+    data class Zoom(
+        val scale: Float = ViewerZoom.MIN_SCALE,
+        val offsetX: Float = 0f,
+        val offsetY: Float = 0f,
     )
 
     sealed interface Intent {
         data object Retry : Intent
+
+        /**
+         * Жест масштабирования или перетаскивания.
+         *
+         * Размеры контейнера и изображения передаются вместе с жестом: без
+         * них нельзя удержать точку под пальцем и ограничить сдвиг границами
+         * видимой области.
+         */
+        data class ZoomGesture(
+            val zoomChange: Float,
+            val panX: Float,
+            val panY: Float,
+            val centroidX: Float,
+            val centroidY: Float,
+            val containerWidth: Float,
+            val containerHeight: Float,
+            val imageWidth: Float,
+            val imageHeight: Float,
+        ) : Intent
+
+        /** Двойное нажатие: переключение между исходным и увеличенным масштабом. */
+        data object ToggleZoom : Intent
     }
 }
 
@@ -48,13 +83,16 @@ class ViewerStoreFactory(
         data object Loading : Msg
         data class Loaded(val file: File) : Msg
         data class Failed(val message: String) : Msg
+        data class Zoomed(val zoom: ViewerStore.Zoom) : Msg
     }
 
     private object ReducerImpl : Reducer<ViewerStore.State, Msg> {
         override fun ViewerStore.State.reduce(msg: Msg): ViewerStore.State = when (msg) {
             Msg.Loading -> copy(isLoading = true, error = null)
-            is Msg.Loaded -> copy(isLoading = false, file = msg.file, error = null)
+            // Новый оригинал показывается в исходном масштабе.
+            is Msg.Loaded -> copy(isLoading = false, file = msg.file, error = null, zoom = ViewerStore.Zoom())
             is Msg.Failed -> copy(isLoading = false, error = msg.message)
+            is Msg.Zoomed -> copy(zoom = msg.zoom)
         }
     }
 
@@ -70,6 +108,23 @@ class ViewerStoreFactory(
         override fun executeIntent(intent: ViewerStore.Intent) {
             when (intent) {
                 ViewerStore.Intent.Retry -> load()
+                is ViewerStore.Intent.ZoomGesture -> dispatch(
+                    Msg.Zoomed(
+                        ViewerZoom.apply(
+                            zoom = state().zoom,
+                            zoomChange = intent.zoomChange,
+                            panX = intent.panX,
+                            panY = intent.panY,
+                            centroidX = intent.centroidX,
+                            centroidY = intent.centroidY,
+                            containerWidth = intent.containerWidth,
+                            containerHeight = intent.containerHeight,
+                            imageWidth = intent.imageWidth,
+                            imageHeight = intent.imageHeight,
+                        ),
+                    ),
+                )
+                ViewerStore.Intent.ToggleZoom -> dispatch(Msg.Zoomed(ViewerZoom.toggle(state().zoom)))
             }
         }
 
