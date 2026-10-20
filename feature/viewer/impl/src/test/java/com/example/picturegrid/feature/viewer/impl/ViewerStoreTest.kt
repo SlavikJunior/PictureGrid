@@ -1,5 +1,7 @@
 package com.example.picturegrid.feature.viewer.impl
 
+import com.example.picturegrid.core.images.ImageContent
+import com.example.picturegrid.core.images.ImageContentChecker
 import com.example.picturegrid.core.images.ImageStorageImpl
 import com.example.picturegrid.core.images.OriginalImageLoader
 import com.example.picturegrid.core.network.BinaryResponse
@@ -45,8 +47,11 @@ class ViewerStoreTest {
     }
 
     private val url = "https://example.com/img.png"
-    private val imageValidator: (ByteArray) -> Boolean = { bytes ->
-        runCatching { javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes)) != null }.getOrDefault(false)
+    private val imageChecker = ImageContentChecker { bytes ->
+        val isImage = runCatching {
+            javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes)) != null
+        }.getOrDefault(false)
+        if (isImage) ImageContent.VALID else ImageContent.NOT_IMAGE
     }
     private val validPng = java.util.Base64.getDecoder().decode(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
@@ -62,7 +67,7 @@ class ViewerStoreTest {
 
     private fun store(client: NetworkClient): ViewerStore {
         val storage = ImageStorageImpl(File(tempFolder.root, "orig"), testDispatcher)
-        val loader = OriginalImageLoader(client, storage, testDispatcher, imageValidator)
+        val loader = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         return ViewerStoreFactory(
             storeFactory = com.arkivanov.mvikotlin.main.store.DefaultStoreFactory(),
             loader = loader,
