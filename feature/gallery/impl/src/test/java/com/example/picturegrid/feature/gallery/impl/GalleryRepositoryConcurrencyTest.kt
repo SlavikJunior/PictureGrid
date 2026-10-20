@@ -41,22 +41,17 @@ class GalleryRepositoryConcurrencyTest {
     }
 
     @Test
-    fun `parallel refresh keeps storage valid`() = runTest(testDispatcher) {
+    fun `parallel refresh performs a single network request`() = runTest(testDispatcher) {
         val storage = GalleryListStorage(File(tempFolder.root, "list.txt"))
         val calls = AtomicInteger(0)
-        val started = CompletableDeferred<Unit>()
+        val requestStarted = CompletableDeferred<Unit>()
         val release = CompletableDeferred<Unit>()
         val client = object : NetworkClient {
             override suspend fun fetchText(url: String): NetworkResult<String> {
-                val index = calls.incrementAndGet()
-                if (index == 2) started.complete(Unit)
-                started.await()
+                calls.incrementAndGet()
+                requestStarted.complete(Unit)
                 release.await()
-                return if (index == 1) {
-                    NetworkResult.Success("first content")
-                } else {
-                    NetworkResult.Success("second content")
-                }
+                return NetworkResult.Success("content")
             }
         }
         val repo = GalleryRepositoryImpl(
@@ -69,7 +64,9 @@ class GalleryRepositoryConcurrencyTest {
         coroutineScope {
             val first = async { repo.refresh() }
             val second = async { repo.refresh() }
-            started.await()
+            requestStarted.await()
+            // Дать обоим вызовам присоединиться к общей загрузке.
+            testScheduler.advanceUntilIdle()
             release.complete(Unit)
             val firstResult = first.await()
             val secondResult = second.await()
@@ -77,7 +74,30 @@ class GalleryRepositoryConcurrencyTest {
             assertTrue(secondResult is GalleryRefreshResult.Success)
         }
 
-        val stored = storage.read()
-        assertTrue(stored == "first content" || stored == "second content")
+        assertEquals("параллельный refresh должен выполнять один запрос", 1, calls.get())
+        assertEquals("content", storage.read())
+    }
+
+    @Test
+    fun `sequential refresh performs a request each time`() = runTest(testDispatcher) {
+        val storage = GalleryListStorage(File(tempFolder.root, "list.txt"))
+        val calls = AtomicInteger(0)
+        val client = object : NetworkClient {
+            override suspend fun fetchText(url: String): NetworkResult<String> {
+                calls.incrementAndGet()
+                return NetworkResult.Success("content $calls")
+            }
+        }
+        val repo = GalleryRepositoryImpl(
+            networkClient = client,
+            storage = storage,
+            url = "https://example.com/list.txt",
+            ioDispatcher = testDispatcher,
+        )
+
+        repo.refresh()
+        repo.refresh()
+
+        assertEquals("последовательные вызовы должны выполнять запрос каждый раз", 2, calls.get())
     }
 }
