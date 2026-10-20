@@ -2,12 +2,17 @@ package com.example.picturegrid.core.images
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 /**
  * Проверка классификатора содержимого ответа.
  */
 class ImageContentClassifierTest {
+
+    @get:Rule
+    val tempFolder = TemporaryFolder()
 
     @Test
     fun `text content types are not images`() {
@@ -55,8 +60,7 @@ class ImageContentClassifierTest {
     }
 
     @Test
-    fun `non image content is not recognized as image`() {
-        assertFalse(ImageContentClassifier.isImageSignature(ByteArray(0)))
+    fun `non image content is not recognized as image`() {        assertFalse(ImageContentClassifier.isImageSignature(ByteArray(0)))
         assertFalse(ImageContentClassifier.isImageSignature("<html>".toByteArray()))
         assertFalse(ImageContentClassifier.isImageSignature("not an image at all".toByteArray()))
         assertFalse(
@@ -64,5 +68,24 @@ class ImageContentClassifierTest {
                 byteArrayOf(0x00, 0x00, 0x00, 0x18) + "ftypmp42".toByteArray(),
             ),
         )
+    }
+
+    @Test
+    fun `stored file is checked by its content`() {
+        val image = tempFolder.newFile("image.bin")
+        image.writeBytes(
+            byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A) + ByteArray(64),
+        )
+        assertTrue(ImageContentClassifier.isImageFile(image))
+
+        val garbage = tempFolder.newFile("garbage.bin")
+        garbage.writeText("not an image")
+        assertFalse(ImageContentClassifier.isImageFile(garbage))
+
+        val empty = tempFolder.newFile("empty.bin")
+        empty.writeBytes(ByteArray(0))
+        assertFalse(ImageContentClassifier.isImageFile(empty))
+
+        assertFalse(ImageContentClassifier.isImageFile(tempFolder.root))
     }
 }

@@ -26,6 +26,13 @@ interface ImageStorage {
     /** Уже сохранённый файл для [url] или null, если его нет. */
     fun cachedFile(url: String): File?
 
+    /**
+     * Удаляет сохранённый оригинал [url].
+     *
+     * @return `true`, если после вызова файла не осталось.
+     */
+    fun delete(url: String): Boolean
+
     /** Атомарно сохраняет [bytes] как оригинал [url]. */
     suspend fun store(url: String, bytes: ByteArray): Result<File>
 }
@@ -40,6 +47,11 @@ class ImageStorageImpl(
     override fun cachedFile(url: String): File? {
         val target = fileFor(url)
         return if (target.exists() && target.length() > 0L) target else null
+    }
+
+    override fun delete(url: String): Boolean {
+        val target = fileFor(url)
+        return !target.exists() || target.delete()
     }
 
     override suspend fun store(url: String, bytes: ByteArray): Result<File> =

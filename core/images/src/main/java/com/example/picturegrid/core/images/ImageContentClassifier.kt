@@ -1,5 +1,7 @@
 package com.example.picturegrid.core.images
 
+import java.io.File
+
 /**
  * Определение того, является ли содержимое ответа изображением.
  *
@@ -55,6 +57,26 @@ object ImageContentClassifier {
         }
     }
 
+    /**
+     * Является ли файл сохранённым изображением.
+     *
+     * Проверяется сигнатура первых байт: этого достаточно, чтобы отсечь
+     * пустой или повреждённый файл, и файл не нужно читать целиком.
+     */
+    fun isImageFile(file: File): Boolean {
+        if (!file.isFile || file.length() == 0L) return false
+        return file.inputStream().use { stream ->
+            val head = ByteArray(SIGNATURE_PROBE_BYTES)
+            var offset = 0
+            while (offset < head.size) {
+                val read = stream.read(head, offset, head.size - offset)
+                if (read <= 0) break
+                offset += read
+            }
+            isImageSignature(head.copyOf(offset))
+        }
+    }
+
     private fun normalizeContentType(contentType: String?): String? =
         contentType
             ?.substringBefore(';')
@@ -83,6 +105,7 @@ object ImageContentClassifier {
 
     private const val WEBP_BRAND_OFFSET = 8
     private const val BMFF_BRAND_OFFSET = 4
+    private const val SIGNATURE_PROBE_BYTES = 32
 
     private val ISO_BMFF_IMAGE_BRANDS = setOf(
         "avif", "avis", "heic", "heix", "heif", "hevc", "mif1", "msf1",

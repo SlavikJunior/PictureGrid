@@ -134,6 +134,40 @@ class OriginalImageLoaderTest {
         assertTrue(result.isFailure)
     }
 
+    @Test
+    fun `corrupted stored file is deleted and downloaded again`() = runTest(testDispatcher) {
+        val url = "https://example.com/img.png"
+        val storage = storage()
+        // Повреждённый файл: сигнатуры изображения в нём нет.
+        storage.store(url, "corrupted content".toByteArray()).getOrThrow()
+
+        val counting = CountingBytesClient(
+            FakeBytesClient(NetworkResult.Success(BinaryResponse(validPng, "image/png"))),
+        )
+        val l = OriginalImageLoader(counting, storage, testDispatcher, imageChecker)
+        val result = l.load(url)
+
+        assertTrue(result.isSuccess)
+        assertEquals("повреждённый оригинал должен быть загружен заново", 1, counting.calls)
+        assertTrue(validPng.contentEquals(result.getOrNull()!!.readBytes()))
+    }
+
+    @Test
+    fun `truncated stored file is treated as corrupted`() = runTest(testDispatcher) {
+        val url = "https://example.com/img.png"
+        val storage = storage()
+        storage.store(url, byteArrayOf(0x89.toByte(), 0x50, 0x4E)).getOrThrow()
+
+        val counting = CountingBytesClient(
+            FakeBytesClient(NetworkResult.Success(BinaryResponse(validPng, "image/png"))),
+        )
+        val l = OriginalImageLoader(counting, storage, testDispatcher, imageChecker)
+        val result = l.load(url)
+
+        assertTrue(result.isSuccess)
+        assertEquals("обрезанный оригинал должен быть загружен заново", 1, counting.calls)
+    }
+
     private fun assertNull(f: File?) = org.junit.Assert.assertNull(f)
 
     private class FakeBytesClient(private val result: NetworkResult<BinaryResponse>) : NetworkClient {

@@ -19,6 +19,8 @@ import java.util.concurrent.ConcurrentHashMap
  * - Сначала проверяет локальную копию и возвращает её без сети.
  * - Повторные параллельные запросы одного URL сериализуются через [Mutex],
  *   чтобы не скачивать один оригинал несколько раз.
+ * - Повторно используемый оригинал проверяется на целостность: повреждённый
+ *   файл удаляется и загружается заново.
  * - Содержимое проверяется как изображение ([ImageContentChecker]) до
  *   сохранения: размеры читаются из заголовка, полноразмерный bitmap
  *   не декодируется.
@@ -37,7 +39,14 @@ class OriginalImageLoader(
     suspend fun load(url: String): Result<File> = withContext(ioDispatcher) {
         val lock = locks.getOrPut(url) { Mutex() }
         lock.withLock {
-            storage.cachedFile(url)?.let { return@withLock Result.success(it) }
+            storage.cachedFile(url)?.let { cached ->
+                if (ImageContentClassifier.isImageFile(cached)) {
+                    return@withLock Result.success(cached)
+                }
+                // Сохранённый файл повреждён: он не показывается пользователю,
+                // удаляется и загружается заново.
+                storage.delete(url)
+            }
 
             when (val result = networkClient.fetchBytes(url)) {
                 is NetworkResult.Success -> {

@@ -75,4 +75,22 @@ class ImageStorageTest {
         File(dir, "$key.img.tmp").writeText("partial")
         assertNull(storage.cachedFile(url))
     }
+
+    @Test
+    fun `delete removes stored file`() {
+        val storage = storage()
+        val url = "https://example.com/a.png"
+        kotlinx.coroutines.runBlocking { storage.store(url, "hello".toByteArray()) }
+        assertNotNull(storage.cachedFile(url))
+
+        assertTrue(storage.delete(url))
+
+        assertNull(storage.cachedFile(url))
+    }
+
+    @Test
+    fun `delete of missing file is not a failure`() {
+        val storage = storage()
+        assertTrue(storage.delete("https://example.com/missing.png"))
+    }
 }
