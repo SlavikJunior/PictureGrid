@@ -36,7 +36,7 @@ import com.example.picturegrid.feature.gallery.api.PlaceholderReason
 fun GalleryContent(
     state: GalleryStore.State,
     onRetry: () -> Unit,
-    onImageClick: (String) -> Unit,
+    onImageClick: (GalleryItem.Image) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Фон рисует Compose, а не окно: так фон галереи совпадает с
@@ -105,7 +105,7 @@ fun GalleryContent(
 private fun GalleryCell(
     item: GalleryItem,
     isRefreshing: Boolean,
-    onImageClick: (String) -> Unit,
+    onImageClick: (GalleryItem.Image) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -124,12 +124,12 @@ private fun GalleryCell(
 @Composable
 private fun ImageCell(
     item: GalleryItem.Image,
-    onImageClick: (String) -> Unit,
+    onImageClick: (GalleryItem.Image) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var retryKey by remember { mutableIntStateOf(0) }
     var failure by remember { mutableStateOf<ImageCellFailure?>(null) }
-    Box(modifier.fillMaxSize().clickable { onImageClick(item.source) }) {
+    Box(modifier.fillMaxSize().clickable { onImageClick(item) }) {
         key(retryKey) {
             AsyncImage(
                 model = item.source,

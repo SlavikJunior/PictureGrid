@@ -13,12 +13,14 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.arkivanov.mvikotlin.core.rx.Observer
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
+import com.example.picturegrid.feature.gallery.api.GalleryImages
 import com.example.picturegrid.feature.gallery.api.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.ImageSelection
 
 @Composable
 fun GalleryScreen(
     repository: GalleryRepository? = null,
-    onImageClick: (String) -> Unit = {},
+    onImageClick: (ImageSelection) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -46,7 +48,7 @@ fun GalleryScreen(
     GalleryContent(
         state = state,
         onRetry = { store.accept(GalleryStore.Intent.Retry) },
-        onImageClick = onImageClick,
+        onImageClick = { item -> onImageClick(GalleryImages.selection(state.items, item.id)) },
         modifier = modifier,
     )
 }

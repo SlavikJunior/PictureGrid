@@ -31,7 +31,7 @@ class ViewerScreenshotTest {
         composeRule.setContent {
             PictureGridTheme(darkTheme = false, dynamicColor = false) {
                 Surface {
-                    ViewerContent(state = ViewerStore.State(url = "u", file = file, isLoading = false), onIntent = {})
+                    ViewerContent(state = ViewerStore.State(urls = listOf("u"), index = 0, file = file, isLoading = false), onIntent = {})
                 }
             }
         }
@@ -43,7 +43,7 @@ class ViewerScreenshotTest {
         composeRule.setContent {
             PictureGridTheme(darkTheme = false, dynamicColor = false) {
                 Surface {
-                    ViewerContent(state = ViewerStore.State(url = "u", isLoading = false, error = "Network error"), onIntent = {})
+                    ViewerContent(state = ViewerStore.State(urls = listOf("u"), index = 0, isLoading = false, error = "Network error"), onIntent = {})
                 }
             }
         }
@@ -55,7 +55,7 @@ class ViewerScreenshotTest {
         composeRule.setContent {
             PictureGridTheme(darkTheme = false, dynamicColor = false) {
                 Surface {
-                    ViewerContent(state = ViewerStore.State(url = "u", isLoading = true), onIntent = {})
+                    ViewerContent(state = ViewerStore.State(urls = listOf("u"), index = 0, isLoading = true), onIntent = {})
                 }
             }
         }

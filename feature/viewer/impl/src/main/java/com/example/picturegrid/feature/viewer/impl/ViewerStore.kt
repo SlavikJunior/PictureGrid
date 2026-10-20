@@ -14,14 +14,23 @@ import java.io.File
 
 interface ViewerStore : Store<ViewerStore.Intent, ViewerStore.State, Nothing> {
 
+    /**
+     * @param urls изображения для перелистывания.
+     * @param index позиция открытого изображения в списке.
+     */
     data class State(
-        val url: String,
+        val urls: List<String>,
+        val index: Int,
         val isLoading: Boolean = true,
         val file: File? = null,
         val error: String? = null,
         val zoom: Zoom = Zoom(),
         val isFullscreen: Boolean = false,
-    )
+    ) {
+
+        /** URL открытого изображения. */
+        val url: String get() = urls.getOrElse(index) { "" }
+    }
 
     /**
      * Масштаб и смещение изображения.
@@ -62,13 +71,17 @@ interface ViewerStore : Store<ViewerStore.Intent, ViewerStore.State, Nothing> {
 
         /** Нажатие по изображению или пустому месту: переключение полноэкранного режима. */
         data object ToggleFullscreen : Intent
+
+        /** Перелистывание: открыто другое изображение из списка. */
+        data class Select(val index: Int) : Intent
     }
 }
 
 class ViewerStoreFactory(
     private val storeFactory: StoreFactory,
     private val loader: OriginalImageLoader,
-    private val url: String,
+    private val urls: List<String>,
+    private val initialIndex: Int = 0,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) {
@@ -76,7 +89,10 @@ class ViewerStoreFactory(
     fun create(): ViewerStore =
         object : ViewerStore, Store<ViewerStore.Intent, ViewerStore.State, Nothing> by storeFactory.create(
             name = "ViewerStore",
-            initialState = ViewerStore.State(url = url),
+            initialState = ViewerStore.State(
+                urls = urls,
+                index = initialIndex.coerceIn(0, (urls.size - 1).coerceAtLeast(0)),
+            ),
             bootstrapper = SimpleBootstrapper(Action.Load),
             executorFactory = ::ExecutorImpl,
             reducer = ReducerImpl,
@@ -84,21 +100,35 @@ class ViewerStoreFactory(
 
     private sealed interface Action { data object Load : Action }
     private sealed interface Msg {
-        data object Loading : Msg
-        data class Loaded(val file: File) : Msg
-        data class Failed(val message: String) : Msg
+        data class Loading(val index: Int) : Msg
+        data class Loaded(val index: Int, val file: File) : Msg
+        data class Failed(val index: Int, val message: String) : Msg
         data class Zoomed(val zoom: ViewerStore.Zoom) : Msg
         data class FullscreenChanged(val isFullscreen: Boolean) : Msg
+        data class Selected(val index: Int) : Msg
     }
 
     private object ReducerImpl : Reducer<ViewerStore.State, Msg> {
         override fun ViewerStore.State.reduce(msg: Msg): ViewerStore.State = when (msg) {
-            Msg.Loading -> copy(isLoading = true, error = null)
+            is Msg.Loading -> if (msg.index != index) {
+                this
+            } else {
+                copy(isLoading = true, error = null)
+            }
             // Новый оригинал показывается в исходном масштабе.
-            is Msg.Loaded -> copy(isLoading = false, file = msg.file, error = null, zoom = ViewerStore.Zoom())
-            is Msg.Failed -> copy(isLoading = false, error = msg.message)
+            is Msg.Loaded -> if (msg.index != index) {
+                this
+            } else {
+                copy(isLoading = false, file = msg.file, error = null, zoom = ViewerStore.Zoom())
+            }
+            is Msg.Failed -> if (msg.index != index) {
+                this
+            } else {
+                copy(isLoading = false, error = msg.message)
+            }
             is Msg.Zoomed -> copy(zoom = msg.zoom)
             is Msg.FullscreenChanged -> copy(isFullscreen = msg.isFullscreen)
+            is Msg.Selected -> copy(index = msg.index, isLoading = true, file = null, error = null, zoom = ViewerStore.Zoom())
         }
     }
 
@@ -107,13 +137,13 @@ class ViewerStoreFactory(
 
         override fun executeAction(action: Action) {
             when (action) {
-                Action.Load -> load()
+                Action.Load -> load(state().index)
             }
         }
 
         override fun executeIntent(intent: ViewerStore.Intent) {
             when (intent) {
-                ViewerStore.Intent.Retry -> load()
+                ViewerStore.Intent.Retry -> load(state().index)
                 is ViewerStore.Intent.ZoomGesture -> dispatch(
                     Msg.Zoomed(
                         ViewerZoom.apply(
@@ -134,18 +164,29 @@ class ViewerStoreFactory(
                 ViewerStore.Intent.ToggleFullscreen -> dispatch(
                     Msg.FullscreenChanged(!state().isFullscreen),
                 )
+                is ViewerStore.Intent.Select -> select(intent.index)
             }
         }
 
-        private fun load() {
+        private fun select(index: Int) {
+            val current = state()
+            if (index !in current.urls.indices || index == current.index) return
             scope.launch {
-                dispatch(Msg.Loading)
-                val result = withContext(ioDispatcher) { loader.load(state().url) }
+                dispatch(Msg.Selected(index))
+                load(index)
+            }
+        }
+
+        private fun load(index: Int) {
+            val url = state().urls.getOrNull(index) ?: return
+            scope.launch {
+                dispatch(Msg.Loading(index))
+                val result = withContext(ioDispatcher) { loader.load(url) }
                 val file = result.getOrNull()
                 if (file != null) {
-                    dispatch(Msg.Loaded(file))
+                    dispatch(Msg.Loaded(index, file))
                 } else {
-                    dispatch(Msg.Failed(result.exceptionOrNull()?.message ?: "Load failed"))
+                    dispatch(Msg.Failed(index, result.exceptionOrNull()?.message ?: "Load failed"))
                 }
             }
         }

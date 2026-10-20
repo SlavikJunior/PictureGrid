@@ -14,10 +14,15 @@ import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import com.example.picturegrid.core.images.OriginalImageLoaderFactory
 import com.example.picturegrid.core.navigation.LocalBottomSheetController
 
+/**
+ * @param urls изображения для перелистывания.
+ * @param initialIndex позиция открытого изображения в списке.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewerScreen(
-    url: String,
+    urls: List<String>,
+    initialIndex: Int = 0,
     loader: com.example.picturegrid.core.images.OriginalImageLoader? = null,
     onShare: (String) -> Unit = {},
     onOpenInBrowser: (String) -> Unit = {},
@@ -25,9 +30,16 @@ fun ViewerScreen(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val actualLoader = loader ?: remember { OriginalImageLoaderFactory.create(context) }
-    val store = remember { ViewerStoreFactory(DefaultStoreFactory(), actualLoader, url).create() }
+    val store = remember(urls) {
+        ViewerStoreFactory(
+            storeFactory = DefaultStoreFactory(),
+            loader = actualLoader,
+            urls = urls,
+            initialIndex = initialIndex,
+        ).create()
+    }
     DisposableEffect(store) { onDispose { store.dispose() } }
-    var state by remember { mutableStateOf(ViewerStore.State(url = url)) }
+    var state by remember { mutableStateOf(ViewerStore.State(urls = urls, index = initialIndex)) }
     DisposableEffect(store) {
         val disposable = store.states(object : Observer<ViewerStore.State> {
             override fun onNext(value: ViewerStore.State) { state = value }

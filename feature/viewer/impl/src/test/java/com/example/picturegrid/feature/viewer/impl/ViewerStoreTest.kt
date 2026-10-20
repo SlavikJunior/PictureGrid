@@ -64,13 +64,13 @@ class ViewerStoreTest {
             override suspend fun fetchBytes(url: String) = result
         }
 
-    private fun store(client: NetworkClient): ViewerStore {
+    private fun store(client: NetworkClient, urls: List<String> = listOf(url)): ViewerStore {
         val storage = ImageStorageImpl(File(tempFolder.root, "orig"), testDispatcher)
         val loader = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         return ViewerStoreFactory(
             storeFactory = com.arkivanov.mvikotlin.main.store.DefaultStoreFactory(),
             loader = loader,
-            url = url,
+            urls = urls,
             ioDispatcher = testDispatcher,
             mainDispatcher = testDispatcher,
         ).create()
@@ -166,6 +166,37 @@ class ViewerStoreTest {
         s.accept(ViewerStore.Intent.Retry)
         advanceUntilIdle()
         assertEquals(1f, s.state.zoom.scale, 0.001f)
+        s.dispose()
+    }
+
+    @Test
+    fun `select switches to another image`() = runTest(testDispatcher) {
+        val client = mutableClient(NetworkResult.Success(BinaryResponse(validPng, "image/png")))
+        val s = store(client, urls = listOf(url, "https://example.com/second.png"))
+        s.init()
+        advanceUntilIdle()
+        assertEquals(0, s.state.index)
+        assertEquals(url, s.state.url)
+
+        s.accept(ViewerStore.Intent.Select(1))
+        advanceUntilIdle()
+        assertEquals(1, s.state.index)
+        assertEquals("https://example.com/second.png", s.state.url)
+        assertNotNull(s.state.file)
+        s.dispose()
+    }
+
+    @Test
+    fun `select of the same image is ignored`() = runTest(testDispatcher) {
+        val client = mutableClient(NetworkResult.Success(BinaryResponse(validPng, "image/png")))
+        val s = store(client)
+        s.init()
+        advanceUntilIdle()
+        val file = s.state.file
+        s.accept(ViewerStore.Intent.Select(0))
+        advanceUntilIdle()
+        assertEquals(0, s.state.index)
+        assertEquals(file, s.state.file)
         s.dispose()
     }
 }

@@ -33,12 +33,19 @@ class MainActivity : ComponentActivity() {
                     onBack = { backStack.removeLastOrNull() },
                     sceneStrategies = listOf(PictureGridSceneStrategy()),
                     entryProvider = entryProvider {
-                        entry<GalleryRoute> { GalleryScreen(onImageClick = router::navigateToViewer) }
+                        entry<GalleryRoute> {
+                            GalleryScreen(
+                                onImageClick = { selection ->
+                                    router.navigateToViewer(selection.urls, selection.index)
+                                },
+                            )
+                        }
                         entry<ViewerRoute>(
                             metadata = BottomSheetSceneStrategy.bottomSheet(),
                         ) { key ->
                             ViewerScreen(
-                                url = key.url,
+                                urls = key.urls,
+                                initialIndex = key.index,
                                 onShare = { url -> startShare(url) },
                                 onOpenInBrowser = { url -> startOpenInBrowser(url) },
                             )

@@ -12,8 +12,8 @@ class NavigationRouter(
         backStack.add(GalleryRoute)
     }
 
-    override fun navigateToViewer(url: String) {
-        backStack.add(ViewerRoute(url))
+    override fun navigateToViewer(urls: List<String>, index: Int) {
+        backStack.add(ViewerRoute(urls = urls, index = index))
     }
 
     override fun navigateBack() {

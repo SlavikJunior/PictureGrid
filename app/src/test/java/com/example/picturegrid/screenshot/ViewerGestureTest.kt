@@ -5,6 +5,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.pinch
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
@@ -35,13 +36,13 @@ class ViewerGestureTest {
 
     private val intents = mutableListOf<ViewerStore.Intent>()
 
-    private fun setContent() {
+    private fun setContent(urls: List<String> = listOf("u")) {
         val file = File.createTempFile("orig", ".png")
         composeRule.setContent {
             PictureGridTheme(darkTheme = false, dynamicColor = false) {
                 Surface {
                     ViewerContent(
-                        state = ViewerStore.State(url = "u", file = file, isLoading = false),
+                        state = ViewerStore.State(urls = urls, index = 0, file = file, isLoading = false),
                         onIntent = { intents += it },
                     )
                 }
@@ -73,6 +74,17 @@ class ViewerGestureTest {
         assertTrue(
             "Ожидалось переключение масштаба",
             intents.any { it is ViewerStore.Intent.ToggleZoom },
+        )
+    }
+
+    @Test
+    fun `swipe selects the next image`() {
+        setContent(urls = listOf("u", "second"))
+        composeRule.onRoot().performTouchInput { swipeLeft() }
+        composeRule.mainClock.advanceTimeBy(1_000)
+        assertTrue(
+            "Ожидался переход к следующему изображению",
+            intents.any { it is ViewerStore.Intent.Select && it.index == 1 },
         )
     }
 
