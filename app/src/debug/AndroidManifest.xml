@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Только для debug-сборки: разрешает cleartext-соединения к локальному
+        серверу на эмуляторе (10.0.2.2) для ручных проверок.
+    -->
+    <application android:networkSecurityConfig="@xml/network_security_config" />
+
+</manifest>

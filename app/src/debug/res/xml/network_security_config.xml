@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Временная конфигурация только для debug-сборки: разрешает cleartext
+    к локальному серверу на 10.0.2.2 (адрес хоста из эмулятора).
+    Используется только для ручных проверок на эмуляторе.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>
