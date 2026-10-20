@@ -12,7 +12,7 @@ import coil3.SingletonImageLoader
 import com.example.picturegrid.core.designsystem.PictureGridTheme
 import com.example.picturegrid.core.images.ImageLoaderFactory
 import com.example.picturegrid.core.navigation.BottomSheetSceneStrategy
-import com.example.picturegrid.core.navigation.PicGridSceneStrategy
+import com.example.picturegrid.core.navigation.PictureGridSceneStrategy
 import com.example.picturegrid.core.navigation.GalleryRoute
 import com.example.picturegrid.core.navigation.NavigationRouter
 import com.example.picturegrid.core.navigation.ViewerRoute
@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
                 NavDisplay(
                     backStack = backStack,
                     onBack = { backStack.removeLastOrNull() },
-                    sceneStrategies = listOf(PicGridSceneStrategy()),
+                    sceneStrategies = listOf(PictureGridSceneStrategy()),
                     entryProvider = entryProvider {
                         entry<GalleryRoute> { GalleryScreen(onImageClick = router::navigateToViewer) }
                         entry<ViewerRoute>(

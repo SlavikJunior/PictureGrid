@@ -7,5 +7,5 @@ import androidx.navigation3.scene.SinglePaneSceneStrategy
  * Комбинированная стратегия: BottomSheet для помеченных destinations,
  * иначе обычный однопанельный экран.
  */
-class PicGridSceneStrategy<T : Any> :
+class PictureGridSceneStrategy<T : Any> :
     SceneStrategy<T> by BottomSheetSceneStrategy<T>().then(SinglePaneSceneStrategy())
