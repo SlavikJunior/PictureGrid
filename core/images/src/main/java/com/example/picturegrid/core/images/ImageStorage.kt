@@ -47,7 +47,7 @@ class ImageStorageImpl(
             val target = fileFor(url)
             val parent = target.parentFile
             if (parent != null && !parent.exists() && !parent.mkdirs()) {
-                return@withContext Result.failure(IOException("Cannot create directory: ${parent.absolutePath}"))
+                return@withContext Result.failure(IOException("Cannot create directory for the originals"))
             }
             val tmp = File(parent, target.name + ".tmp")
             try {
@@ -63,11 +63,11 @@ class ImageStorageImpl(
                     // ATOMIC_MOVE может не поддерживаться на некоторых ФС.
                     if (target.exists() && !target.delete()) {
                         tmp.delete()
-                        return@withContext Result.failure(IOException("Cannot replace file: ${target.absolutePath}", e))
+                        return@withContext Result.failure(IOException("Cannot replace the original file", e))
                     }
                     if (!tmp.renameTo(target)) {
                         tmp.delete()
-                        return@withContext Result.failure(IOException("Cannot rename temp file to: ${target.absolutePath}", e))
+                        return@withContext Result.failure(IOException("Cannot rename the temporary file", e))
                     }
                 }
                 Result.success(target)
