@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+        Ночная тема окна. android:Theme.Material (без Light) не сбрасывает
+        uiMode, поэтому Compose видит UI_MODE_NIGHT_YES и применяет
+        тёмную цветовую схему.
+    -->
+    <style name="Theme.PictureGrid" parent="android:Theme.Material.NoActionBar" />
+</resources>

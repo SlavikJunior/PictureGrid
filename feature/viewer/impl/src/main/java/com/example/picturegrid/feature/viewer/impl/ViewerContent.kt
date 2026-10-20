@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,23 +24,27 @@ fun ViewerContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        when {
-            state.isLoading && state.file == null -> CircularProgressIndicator()
-            state.error != null && state.file == null -> {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.error, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
-                    Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) {
-                        Text("Повторить")
+    // Фон рисует Compose, а не окно: так фон просмотра совпадает с
+    // MaterialTheme в светлой и тёмной темах.
+    Surface(modifier = modifier, color = MaterialTheme.colorScheme.background) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            when {
+                state.isLoading && state.file == null -> CircularProgressIndicator()
+                state.error != null && state.file == null -> {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(state.error, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
+                        Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) {
+                            Text("Повторить")
+                        }
                     }
                 }
+                state.file != null -> AsyncImage(
+                    model = state.file,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
-            state.file != null -> AsyncImage(
-                model = state.file,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize(),
-            )
         }
     }
 }
