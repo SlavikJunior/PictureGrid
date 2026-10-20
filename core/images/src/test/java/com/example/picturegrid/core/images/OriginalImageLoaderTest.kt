@@ -24,8 +24,12 @@ class OriginalImageLoaderTest {
 
     private val validPng = createMinimalPng()
 
-    private val imageValidator: (ByteArray) -> Boolean = { bytes ->
-        runCatching { javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes)) != null }.getOrDefault(false)
+    // Проверка содержимого подменяется заглушкой: тесты не зависят от
+    // декодера Android.
+    private val imageChecker = ImageContentChecker { bytes ->
+        runCatching {
+            javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes)) != null
+        }.getOrDefault(false)
     }
 
     private fun storage() = ImageStorageImpl(File(tempFolder.root, "orig"), testDispatcher)
@@ -33,7 +37,7 @@ class OriginalImageLoaderTest {
         networkClient = client,
         storage = storage(),
         ioDispatcher = testDispatcher,
-        imageValidator = imageValidator,
+        imageChecker = imageChecker,
     )
 
     @Test
@@ -58,21 +62,42 @@ class OriginalImageLoaderTest {
     fun `invalid bytes return failure and do not store`() = runTest(testDispatcher) {
         val client = FakeBytesClient(NetworkResult.Success(BinaryResponse("not an image".toByteArray(), "image/png")))
         val storage = storage()
-        val l = OriginalImageLoader(client, storage, testDispatcher, imageValidator)
+        val l = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         val result = l.load("https://example.com/img.png")
         assertTrue(result.isFailure)
         assertNull(storage.cachedFile("https://example.com/img.png"))
     }
 
     @Test
+    fun `empty body is rejected and not stored`() = runTest(testDispatcher) {
+        val client = FakeBytesClient(NetworkResult.Success(BinaryResponse(ByteArray(0), "image/png")))
+        val storage = storage()
+        val l = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
+        val result = l.load("https://example.com/img.png")
+        assertTrue(result.isFailure)
+        assertNull(storage.cachedFile("https://example.com/img.png"))
+    }
+
+    @Test
+    fun `valid image is stored unchanged`() = runTest(testDispatcher) {
+        val client = FakeBytesClient(NetworkResult.Success(BinaryResponse(validPng, "image/png")))
+        val storage = storage()
+        val l = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
+        val result = l.load("https://example.com/img.png")
+        assertTrue(result.isSuccess)
+        // Оригинал сохраняется без изменений.
+        assertTrue(validPng.contentEquals(result.getOrNull()!!.readBytes()))
+    }
+
+    @Test
     fun `cached file is reused without network`() = runTest(testDispatcher) {
         val client = FakeBytesClient(NetworkResult.Success(BinaryResponse(validPng, "image/png")))
         val storage = storage()
-        val l = OriginalImageLoader(client, storage, testDispatcher, imageValidator)
+        val l = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         l.load("https://example.com/img.png")
         // Второй вызов не должен обращаться к сети.
         val counting = CountingBytesClient(client)
-        val l2 = OriginalImageLoader(counting, storage, testDispatcher, imageValidator)
+        val l2 = OriginalImageLoader(counting, storage, testDispatcher, imageChecker)
         val result = l2.load("https://example.com/img.png")
         assertTrue(result.isSuccess)
         assertEquals(0, counting.calls)
@@ -84,7 +109,7 @@ class OriginalImageLoaderTest {
         val dir = File(tempFolder.root, "persisted")
         val storage1 = ImageStorageImpl(dir, testDispatcher)
         val client1 = FakeBytesClient(NetworkResult.Success(BinaryResponse(validPng, "image/png")))
-        val loader1 = OriginalImageLoader(client1, storage1, testDispatcher, imageValidator)
+        val loader1 = OriginalImageLoader(client1, storage1, testDispatcher, imageChecker)
         val firstResult = loader1.load(url)
         assertTrue(firstResult.isSuccess)
         val storedFile = firstResult.getOrNull()!!
@@ -93,7 +118,7 @@ class OriginalImageLoaderTest {
             FakeBytesClient(NetworkResult.Failure(NetworkError.Io)),
         )
         val storage2 = ImageStorageImpl(dir, testDispatcher)
-        val loader2 = OriginalImageLoader(counting, storage2, testDispatcher, imageValidator)
+        val loader2 = OriginalImageLoader(counting, storage2, testDispatcher, imageChecker)
         val secondResult = loader2.load(url)
 
         assertTrue(secondResult.isSuccess)

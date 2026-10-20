@@ -28,8 +28,12 @@ class OriginalImageLoaderRetrofitTest {
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
     )
 
-    private val imageValidator: (ByteArray) -> Boolean = { bytes ->
-        runCatching { javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes)) != null }.getOrDefault(false)
+    // Проверка содержимого подменяется заглушкой: тесты не зависят от
+    // декодера Android.
+    private val imageChecker = ImageContentChecker { bytes ->
+        runCatching {
+            javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes)) != null
+        }.getOrDefault(false)
     }
 
     @Test
@@ -42,7 +46,7 @@ class OriginalImageLoaderRetrofitTest {
         )
         val storage = ImageStorageImpl(File(tempFolder.root, "orig"), testDispatcher)
         val client = RetrofitNetworkClient(baseUrl = server.url("/").toString())
-        val loader = OriginalImageLoader(client, storage, testDispatcher, imageValidator)
+        val loader = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         val url = server.url("/img.png").toString()
         val result = loader.load(url)
         assertTrue(result.isSuccess)
@@ -56,7 +60,7 @@ class OriginalImageLoaderRetrofitTest {
         server.enqueue(MockResponse().setResponseCode(404))
         val storage = ImageStorageImpl(File(tempFolder.root, "orig"), testDispatcher)
         val client = RetrofitNetworkClient(baseUrl = server.url("/").toString())
-        val loader = OriginalImageLoader(client, storage, testDispatcher, imageValidator)
+        val loader = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         val url = server.url("/missing.png").toString()
         val result = loader.load(url)
         assertTrue(result.isFailure)
