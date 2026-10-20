@@ -25,6 +25,20 @@ Android-приложение для загрузки списка URL изобр
 ./gradlew assembleDebug
 ```
 
+Сборка release APK (R8 включён, подпись задаётся отдельно):
+
+```bash
+./gradlew assembleRelease
+```
+
+Проверка целостности зависимостей включена в строгом режиме: сборка падает,
+если контрольная сумма артефакта отличается от зафиксированной в
+`gradle/verification-metadata.xml`. Обновить снимок checksum-ов:
+
+```bash
+./gradlew --write-verification-metadata sha256 assembleDebug assembleRelease testDebugUnitTest
+```
+
 Установка на устройство/эмулятор:
 
 ```bash
