@@ -26,6 +26,15 @@ interface GalleryStore : Store<GalleryStore.Intent, GalleryStore.State, Nothing>
     sealed interface Intent {
         data object Retry : Intent
         data object ReloadCached : Intent
+
+        /**
+         * Повторная загрузка списка после восстановления сети.
+         *
+         * Фоновая синхронизация обновляет сохранённый список, но экран
+         * должен увидеть новые данные сам: без этого интента список на
+         * экране остался бы прежним до перезапуска приложения.
+         */
+        data object Refresh : Intent
     }
 }
 
@@ -102,6 +111,7 @@ class GalleryStoreFactory(
             when (intent) {
                 GalleryStore.Intent.Retry -> load()
                 GalleryStore.Intent.ReloadCached -> reloadCached()
+                GalleryStore.Intent.Refresh -> refresh()
             }
         }
 
@@ -137,6 +147,28 @@ class GalleryStoreFactory(
                 val cached = withContext(ioDispatcher) { repository.getCached() }
                 if (cached != null) {
                     dispatch(Msg.Loaded(cached))
+                }
+            }
+        }
+
+        /**
+         * Загружает список заново, не показывая кэш: он и так уже на экране.
+         */
+        private fun refresh() {
+            scope.launch {
+                when (val result = withContext(ioDispatcher) { repository.refresh() }) {
+                    is GalleryRefreshResult.Success -> dispatch(Msg.Loaded(result.items))
+                    is GalleryRefreshResult.Failure -> {
+                        if (result.error.retryable) {
+                            syncScheduler()
+                        }
+                        dispatch(
+                            Msg.LoadFailed(
+                                message = result.error.toMessage(),
+                                cached = result.cached,
+                            ),
+                        )
+                    }
                 }
             }
         }
