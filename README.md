@@ -39,6 +39,15 @@ Android-приложение для загрузки списка URL изобр
 ./gradlew --write-verification-metadata sha256 assembleDebug assembleRelease testDebugUnitTest
 ```
 
+Бинарные артефакты, POM и Gradle Module Metadata проверяются строго. Файлы
+`-sources.jar` и `-javadoc.jar` сознательно исключены из проверки: их скачивает
+IDE при синхронизации проекта, чтобы открывать исходники и документацию в
+навигации, но в сборку они не попадают. Без этого правила ручная синхронизация
+в Android Studio падала бы с `Dependency verification failed` на 117
+`-sources.jar` плагинов и их транзитивных зависимостей. Правило описано в
+`<trusted-artifacts>` файла `gradle/verification-metadata.xml` и сохраняется при
+обновлении снимка checksum-ов.
+
 Установка на устройство/эмулятор:
 
 ```bash
