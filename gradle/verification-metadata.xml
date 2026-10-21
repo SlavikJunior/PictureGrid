@@ -6,6 +6,7 @@
       <trusted-artifacts>
          <trust file=".*-sources[.]jar" regex="true" reason="IDE скачивает исходники для навигации по коду; в сборку они не попадают"/>
          <trust file=".*-javadoc[.]jar" regex="true" reason="IDE скачивает javadoc для навигации по API; в сборку они не попадают"/>
+         <trust group="gradle" name="gradle" file=".*-(src|javadoc)[.]zip" regex="true" reason="IDE скачивает исходники и javadoc дистрибутива Gradle; в сборку они не попадают"/>
       </trusted-artifacts>
    </configuration>
    <components>
