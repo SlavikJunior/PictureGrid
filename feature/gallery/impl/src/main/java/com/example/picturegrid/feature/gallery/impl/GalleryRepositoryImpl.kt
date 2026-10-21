@@ -1,9 +1,9 @@
 package com.example.picturegrid.feature.gallery.impl
 
 import com.example.picturegrid.core.network.NetworkClient
-import com.example.picturegrid.core.network.NetworkError
 import com.example.picturegrid.core.network.NetworkResult
 import com.example.picturegrid.core.network.isRetryable
+import com.example.picturegrid.core.network.toUserMessage
 import com.example.picturegrid.feature.gallery.api.GalleryError
 import com.example.picturegrid.feature.gallery.api.GalleryItem
 import com.example.picturegrid.feature.gallery.api.GalleryRefreshResult
@@ -77,19 +77,11 @@ class GalleryRepositoryImpl(
             }
             is NetworkResult.Failure -> {
                 GalleryRefreshResult.Failure(
-                    GalleryError.Network(result.error.toMessage(), result.error.isRetryable()),
+                    GalleryError.Network(result.error.toUserMessage(), result.error.isRetryable()),
                     cached,
                 )
             }
         }
-    }
-
-    private fun NetworkError.toMessage(): String = when (this) {
-        NetworkError.Io -> "Network I/O error"
-        NetworkError.Timeout -> "Network timeout"
-        NetworkError.EmptyBody -> "Empty response body"
-        is NetworkError.Http -> "HTTP error $code"
-        is NetworkError.TooLarge -> "Response is too large"
     }
 
     companion object {

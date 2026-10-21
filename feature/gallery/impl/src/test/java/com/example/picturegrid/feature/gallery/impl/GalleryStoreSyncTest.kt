@@ -105,7 +105,7 @@ class GalleryStoreSyncTest {
         val repository = object : GalleryRepository {
             override suspend fun getCached(): List<GalleryItem>? = null
             override suspend fun refresh(): GalleryRefreshResult =
-                GalleryRefreshResult.Failure(GalleryError.Network("Network I/O error", retryable = true), null)
+                GalleryRefreshResult.Failure(GalleryError.Network("Ошибка сети", retryable = true), null)
         }
         val store = GalleryStoreFactory(
             storeFactory = com.arkivanov.mvikotlin.main.store.DefaultStoreFactory(),
@@ -117,7 +117,7 @@ class GalleryStoreSyncTest {
         store.init()
         advanceUntilIdle()
         assertEquals(1, scheduled)
-        assertTrue("пользователь должен видеть причину", store.state.error?.contains("Network") == true)
+        assertTrue("пользователь должен видеть причину", store.state.error?.contains("Сеть") == true)
         store.dispose()
     }
 }

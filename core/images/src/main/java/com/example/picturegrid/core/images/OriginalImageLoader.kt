@@ -2,8 +2,8 @@ package com.example.picturegrid.core.images
 
 import com.example.picturegrid.core.network.BinaryResponse
 import com.example.picturegrid.core.network.NetworkClient
-import com.example.picturegrid.core.network.NetworkError
 import com.example.picturegrid.core.network.NetworkResult
+import com.example.picturegrid.core.network.toUserMessage
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -63,19 +63,12 @@ class OriginalImageLoader(
                     storage.store(url, response.bytes)
                 }
                 is NetworkResult.Failure -> {
-                    Result.failure(Exception(result.error.toMessage()))
+                    Result.failure(Exception(result.error.toUserMessage()))
                 }
             }
         }
     }
 
-    private fun NetworkError.toMessage(): String = when (this) {
-        NetworkError.Io -> "Network I/O error"
-        NetworkError.Timeout -> "Network timeout"
-        NetworkError.EmptyBody -> "Empty response body"
-        is NetworkError.Http -> "HTTP error $code"
-        is NetworkError.TooLarge -> "Response is too large (limit $limitBytes bytes)"
-    }
 }
 
 object OriginalImageLoaderFactory {

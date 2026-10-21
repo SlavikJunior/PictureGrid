@@ -177,6 +177,6 @@ class GalleryStoreFactory(
 
 private fun com.example.picturegrid.feature.gallery.api.GalleryError.toMessage(): String =
     when (this) {
-        is com.example.picturegrid.feature.gallery.api.GalleryError.Network -> "Network: ${message}"
-        is com.example.picturegrid.feature.gallery.api.GalleryError.Storage -> "Storage: ${message}"
+        is com.example.picturegrid.feature.gallery.api.GalleryError.Network -> "Сеть: ${message}"
+        is com.example.picturegrid.feature.gallery.api.GalleryError.Storage -> "Хранилище: ${message}"
     }
