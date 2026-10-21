@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -65,12 +66,20 @@ roborazzi {
 }
 
 dependencies {
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose)
+    implementation(libs.koin.androidx.workmanager)
+    implementation(libs.mvikotlin)
+    implementation(libs.mvikotlin.main)
     implementation(project(":feature:gallery:api"))
     implementation(project(":feature:gallery:impl"))
     implementation(project(":feature:viewer:api"))
     implementation(project(":feature:viewer:impl"))
     implementation(project(":core:common"))
     implementation(project(":core:images"))
+    implementation(project(":core:network"))
     implementation(project(":core:navigation"))
     implementation(project(":core:designsystem"))
 

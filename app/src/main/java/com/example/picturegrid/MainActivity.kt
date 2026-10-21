@@ -12,15 +12,17 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.example.picturegrid.core.designsystem.PictureGridTheme
-import com.example.picturegrid.core.navigation.BottomSheetSceneStrategy
 import com.example.picturegrid.core.navigation.PictureGridSceneStrategy
 import com.example.picturegrid.core.navigation.GalleryRoute
 import com.example.picturegrid.core.navigation.NavigationRouter
-import com.example.picturegrid.core.navigation.ViewerRoute
-import com.example.picturegrid.feature.gallery.impl.GalleryScreen
-import com.example.picturegrid.feature.viewer.impl.ViewerScreen
+import com.example.picturegrid.feature.gallery.impl.galleryNavEntry
+import com.example.picturegrid.feature.viewer.impl.viewerNavEntry
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), KoinComponent {
+
+    private val shareIntents: ShareIntents by inject()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -33,23 +35,16 @@ class MainActivity : ComponentActivity() {
                     onBack = { backStack.removeLastOrNull() },
                     sceneStrategies = listOf(PictureGridSceneStrategy()),
                     entryProvider = entryProvider {
-                        entry<GalleryRoute> {
-                            GalleryScreen(
-                                onImageClick = { selection ->
-                                    router.navigateToViewer(selection.urls, selection.index)
-                                },
-                            )
-                        }
-                        entry<ViewerRoute>(
-                            metadata = BottomSheetSceneStrategy.bottomSheet(),
-                        ) { key ->
-                            ViewerScreen(
-                                urls = key.urls,
-                                initialIndex = key.index,
-                                onShare = { url -> startShare(url) },
-                                onOpenInBrowser = { url -> startOpenInBrowser(url) },
-                            )
-                        }
+                        galleryNavEntry(
+                            onImageClick = { selection ->
+                                router.navigateToViewer(selection.urls, selection.index)
+                            },
+                        )
+                        viewerNavEntry(
+                            selectionProvider = router::viewerSelection,
+                            onShare = ::startShare,
+                            onOpenInBrowser = ::startOpenInBrowser,
+                        )
                     },
                 )
             }
@@ -60,7 +55,7 @@ class MainActivity : ComponentActivity() {
      * Отправка ссылки другим приложениям.
      */
     private fun startShare(url: String) {
-        val chooser = Intent.createChooser(ShareIntents.createShare(url), null)
+        val chooser = Intent.createChooser(shareIntents.createShare(url), null)
         startActivitySafely(chooser) { "Нет приложения для отправки ссылки" }
     }
 
@@ -68,7 +63,7 @@ class MainActivity : ComponentActivity() {
      * Открытие ссылки в браузере.
      */
     private fun startOpenInBrowser(url: String) {
-        startActivitySafely(ShareIntents.createOpenInBrowser(url)) { "Нет приложения для открытия ссылки" }
+        startActivitySafely(shareIntents.createOpenInBrowser(url)) { "Нет приложения для открытия ссылки" }
     }
 
     /**

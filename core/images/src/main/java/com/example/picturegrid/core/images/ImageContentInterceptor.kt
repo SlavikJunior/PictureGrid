@@ -26,7 +26,9 @@ class NotImageContentException : IOException("Response content is not an image")
  *
  * Тело ответа не читается целиком: проверяются только первые байты.
  */
-class ImageContentInterceptor : Interceptor {
+class ImageContentInterceptor(
+    private val classifier: ImageContentClassifier = ImageContentClassifier(),
+) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val response = chain.proceed(chain.request())
@@ -34,13 +36,13 @@ class ImageContentInterceptor : Interceptor {
         if (response.body == null) return response
 
         val contentType = response.header(CONTENT_TYPE_HEADER)
-        if (ImageContentClassifier.isNotImageContentType(contentType)) {
+        if (classifier.isNotImageContentType(contentType)) {
             response.close()
             throw NotImageContentException()
         }
-        if (!ImageContentClassifier.isImageContentType(contentType)) {
+        if (!classifier.isImageContentType(contentType)) {
             val head = response.peekBody(SIGNATURE_PROBE_BYTES).bytes()
-            if (!ImageContentClassifier.isImageSignature(head)) {
+            if (!classifier.isImageSignature(head)) {
                 response.close()
                 throw NotImageContentException()
             }

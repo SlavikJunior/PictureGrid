@@ -1,7 +1,7 @@
 package com.example.picturegrid.feature.gallery.impl
 
-import com.example.picturegrid.feature.gallery.api.GalleryItem
-import com.example.picturegrid.feature.gallery.api.PlaceholderReason
+import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
+import com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason
 import java.net.URI
 
 /**
@@ -17,7 +17,11 @@ import java.net.URI
  * (см. `com.example.picturegrid.core.network.NetworkLimits`), поэтому
  * отдельных ограничений на число строк и их длину не требуется.
  */
-object GalleryListParser {
+internal class GalleryListParser {
+
+    companion object {
+        fun parse(text: String): List<GalleryItem> = GalleryListParser().parse(text)
+    }
 
     fun parse(text: String): List<GalleryItem> {
         val occurrences = mutableMapOf<String, Int>()

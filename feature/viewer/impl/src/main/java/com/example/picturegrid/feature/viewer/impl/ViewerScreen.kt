@@ -5,14 +5,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.arkivanov.mvikotlin.core.rx.Observer
-import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
-import com.example.picturegrid.core.images.OriginalImageLoaderFactory
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.picturegrid.core.navigation.LocalBottomSheetController
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 /**
  * @param urls изображения для перелистывания.
@@ -20,33 +18,17 @@ import com.example.picturegrid.core.navigation.LocalBottomSheetController
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ViewerScreen(
+internal fun ViewerScreen(
+    modifier: Modifier = Modifier,
     urls: List<String>,
     initialIndex: Int = 0,
-    loader: com.example.picturegrid.core.images.OriginalImageLoader? = null,
     onShare: (String) -> Unit = {},
     onOpenInBrowser: (String) -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val actualLoader = loader ?: remember { OriginalImageLoaderFactory.create(context) }
-    val store = remember(urls) {
-        ViewerStoreFactory(
-            storeFactory = DefaultStoreFactory(),
-            loader = actualLoader,
-            urls = urls,
-            initialIndex = initialIndex,
-        ).create()
-    }
+    val viewerStoreFactory: ViewerStoreFactory = koinInject { parametersOf(urls, initialIndex) }
+    val store = remember(viewerStoreFactory) { viewerStoreFactory.create() }
     DisposableEffect(store) { onDispose { store.dispose() } }
-    var state by remember { mutableStateOf(ViewerStore.State(urls = urls, index = initialIndex)) }
-    DisposableEffect(store) {
-        val disposable = store.states(object : Observer<ViewerStore.State> {
-            override fun onNext(value: ViewerStore.State) { state = value }
-            override fun onComplete() {}
-        })
-        onDispose { disposable.dispose() }
-    }
+    val state by store.stateFlow.collectAsStateWithLifecycle()
 
     // Полноэкранный режим: лист раскрывается, системные панели скрываются.
     // Лист живёт в отдельном окне, поэтому управление им принадлежит

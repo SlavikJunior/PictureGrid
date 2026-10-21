@@ -4,10 +4,10 @@ import com.example.picturegrid.core.network.NetworkClient
 import com.example.picturegrid.core.network.NetworkResult
 import com.example.picturegrid.core.network.isRetryable
 import com.example.picturegrid.core.network.toUserMessage
-import com.example.picturegrid.feature.gallery.api.GalleryError
-import com.example.picturegrid.feature.gallery.api.GalleryItem
-import com.example.picturegrid.feature.gallery.api.GalleryRefreshResult
-import com.example.picturegrid.feature.gallery.api.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.GalleryError
+import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -28,10 +28,10 @@ import java.io.IOException
  * новая запись не удалась. При сетевой или ошибке записи возвращается
  * ошибка вместе с ранее сохранённым списком, если он доступен.
  */
-class GalleryRepositoryImpl(
+internal class GalleryRepositoryImpl(
     private val networkClient: NetworkClient,
     private val storage: GalleryListStorage,
-    private val parser: GalleryListParser = GalleryListParser,
+    private val parser: GalleryListParser = GalleryListParser(),
     private val url: String = DEFAULT_URL,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + ioDispatcher),

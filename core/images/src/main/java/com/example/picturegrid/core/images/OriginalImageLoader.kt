@@ -30,8 +30,9 @@ import java.util.concurrent.ConcurrentHashMap
 class OriginalImageLoader(
     private val networkClient: NetworkClient,
     private val storage: ImageStorage,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val imageChecker: ImageContentChecker = BitmapImageContentChecker,
+    private val ioDispatcher: CoroutineDispatcher,
+    private val imageChecker: ImageContentChecker = BitmapImageContentChecker(),
+    private val classifier: ImageContentClassifier = ImageContentClassifier(),
 ) {
 
     private val locks = ConcurrentHashMap<String, Mutex>()
@@ -40,7 +41,7 @@ class OriginalImageLoader(
         val lock = locks.getOrPut(url) { Mutex() }
         lock.withLock {
             storage.cachedFile(url)?.let { cached ->
-                if (ImageContentClassifier.isImageFile(cached)) {
+                if (classifier.isImageFile(cached)) {
                     return@withLock Result.success(cached)
                 }
                 // Сохранённый файл повреждён: он не показывается пользователю,
@@ -51,7 +52,7 @@ class OriginalImageLoader(
             when (val result = networkClient.fetchBytes(url)) {
                 is NetworkResult.Success -> {
                     val response: BinaryResponse = result.data
-                    if (ImageContentClassifier.isNotImageContentType(response.contentType)) {
+                    if (classifier.isNotImageContentType(response.contentType)) {
                         // Текст ошибки не содержит значения ответа сервера:
                         // причина не нужна пользователю и не должна попадать
                         // в тексты ошибок приложения.
@@ -69,14 +70,4 @@ class OriginalImageLoader(
         }
     }
 
-}
-
-object OriginalImageLoaderFactory {
-    fun create(context: android.content.Context): OriginalImageLoader {
-        val storage = ImageStorageImpl(java.io.File(context.filesDir, "images/originals"))
-        return OriginalImageLoader(
-            networkClient = com.example.picturegrid.core.network.RetrofitNetworkClient(),
-            storage = storage,
-        )
-    }
 }

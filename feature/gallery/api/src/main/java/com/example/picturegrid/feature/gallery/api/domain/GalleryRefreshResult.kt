@@ -1,4 +1,4 @@
-package com.example.picturegrid.feature.gallery.api
+package com.example.picturegrid.feature.gallery.api.domain
 
 sealed interface GalleryRefreshResult {
     data class Success(val items: List<GalleryItem>) : GalleryRefreshResult

@@ -41,7 +41,7 @@ import coil3.compose.AsyncImagePainter
 import java.io.File
 
 @Composable
-fun ViewerContent(
+internal fun ViewerContent(
     state: ViewerStore.State,
     onIntent: (ViewerStore.Intent) -> Unit,
     onShare: (String) -> Unit = {},

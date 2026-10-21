@@ -12,7 +12,7 @@ import java.nio.file.StandardCopyOption
  * при ошибке записи ранее сохранённая версия не повреждается. Класс не
  * зависит от Android Context: путь передаётся явно, что упрощает тестирование.
  */
-class GalleryListStorage(
+internal class GalleryListStorage(
     private val file: File,
 ) {
 

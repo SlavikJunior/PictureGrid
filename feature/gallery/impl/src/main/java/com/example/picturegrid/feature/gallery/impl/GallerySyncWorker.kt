@@ -9,8 +9,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.ListenableWorker.Result
-import com.example.picturegrid.feature.gallery.api.GalleryRepository
-import com.example.picturegrid.feature.gallery.api.GalleryRefreshResult
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 
@@ -21,10 +21,10 @@ import kotlinx.coroutines.CancellationException
  * [GalleryRepository], что и экран галереи. Уникальность работы и
  * ограничение по сети обеспечивают отсутствие дублирующих запросов.
  */
-class GallerySyncWorker @JvmOverloads constructor(
+internal class GallerySyncWorker constructor(
     appContext: Context,
     params: WorkerParameters,
-    private val repository: GalleryRepository = createDefaultRepository(appContext),
+    private val repository: GalleryRepository,
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
@@ -52,10 +52,14 @@ class GallerySyncWorker @JvmOverloads constructor(
 /**
  * Планировщик уникальной фоновой синхронизации.
  */
-object GallerySyncScheduler {
-    const val UNIQUE_WORK_NAME = "gallery_list_sync"
+internal class GallerySyncScheduler(
+    private val workManager: WorkManager,
+) {
+    companion object {
+        const val UNIQUE_WORK_NAME = "gallery_list_sync"
+    }
 
-    fun schedule(context: Context) {
+    fun schedule() {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
@@ -67,7 +71,7 @@ object GallerySyncScheduler {
                 TimeUnit.SECONDS,
             )
             .build()
-        WorkManager.getInstance(context).enqueueUniqueWork(
+        workManager.enqueueUniqueWork(
             UNIQUE_WORK_NAME,
             ExistingWorkPolicy.KEEP,
             request,

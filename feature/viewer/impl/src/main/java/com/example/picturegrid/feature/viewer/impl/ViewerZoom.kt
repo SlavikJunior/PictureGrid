@@ -6,16 +6,44 @@ package com.example.picturegrid.feature.viewer.impl
  * Вынесены отдельно от Store, чтобы правила можно было проверить обычными
  * unit-тестами: Store только переносит их в состояние.
  */
-object ViewerZoom {
+internal class ViewerZoom {
 
-    /** Минимальный масштаб: изображение вписано в контейнер целиком. */
-    const val MIN_SCALE: Float = 1f
+    companion object {
+        /** Минимальный масштаб: изображение вписано в контейнер целиком. */
+        const val MIN_SCALE: Float = 1f
 
-    /** Максимальный масштаб: сильнее приближать бессмысленно. */
-    const val MAX_SCALE: Float = 5f
+        /** Максимальный масштаб: сильнее приближать бессмысленно. */
+        const val MAX_SCALE: Float = 5f
 
-    /** Масштаб при двойном нажатии. */
-    const val DOUBLE_TAP_SCALE: Float = 2f
+        /** Масштаб при двойном нажатии. */
+        const val DOUBLE_TAP_SCALE: Float = 2f
+
+        fun apply(
+            zoom: ViewerStore.Zoom,
+            zoomChange: Float,
+            panX: Float,
+            panY: Float,
+            centroidX: Float,
+            centroidY: Float,
+            containerWidth: Float,
+            containerHeight: Float,
+            imageWidth: Float,
+            imageHeight: Float,
+        ): ViewerStore.Zoom = ViewerZoom().apply(
+            zoom,
+            zoomChange,
+            panX,
+            panY,
+            centroidX,
+            centroidY,
+            containerWidth,
+            containerHeight,
+            imageWidth,
+            imageHeight,
+        )
+
+        fun toggle(zoom: ViewerStore.Zoom): ViewerStore.Zoom = ViewerZoom().toggle(zoom)
+    }
 
     /**
      * Применяет жест масштабирования и перетаскивания.

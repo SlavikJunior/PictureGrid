@@ -4,15 +4,22 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.arkivanov.mvikotlin.core.rx.Observer
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import com.example.picturegrid.core.images.OriginalImageLoader
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.io.File
 
-interface ViewerStore : Store<ViewerStore.Intent, ViewerStore.State, Nothing> {
+internal interface ViewerStore : Store<ViewerStore.Intent, ViewerStore.State, Nothing> {
+
+    val stateFlow: StateFlow<State>
 
     /**
      * @param urls изображения для перелистывания.
@@ -77,17 +84,18 @@ interface ViewerStore : Store<ViewerStore.Intent, ViewerStore.State, Nothing> {
     }
 }
 
-class ViewerStoreFactory(
+internal class ViewerStoreFactory(
     private val storeFactory: StoreFactory,
     private val loader: OriginalImageLoader,
     private val urls: List<String>,
     private val initialIndex: Int = 0,
+    private val zoomRules: ViewerZoom = ViewerZoom(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) {
 
-    fun create(): ViewerStore =
-        object : ViewerStore, Store<ViewerStore.Intent, ViewerStore.State, Nothing> by storeFactory.create(
+    fun create(): ViewerStore {
+        val delegate = storeFactory.create<ViewerStore.Intent, Action, Msg, ViewerStore.State, Nothing>(
             name = "ViewerStore",
             initialState = ViewerStore.State(
                 urls = urls,
@@ -96,7 +104,28 @@ class ViewerStoreFactory(
             bootstrapper = SimpleBootstrapper(Action.Load),
             executorFactory = ::ExecutorImpl,
             reducer = ReducerImpl,
-        ) {}
+        )
+        return StateFlowViewerStore(delegate)
+    }
+
+    private class StateFlowViewerStore(
+        private val delegate: Store<ViewerStore.Intent, ViewerStore.State, Nothing>,
+    ) : ViewerStore, Store<ViewerStore.Intent, ViewerStore.State, Nothing> by delegate {
+        private val _state = MutableStateFlow(delegate.state)
+        override val stateFlow: StateFlow<ViewerStore.State> = _state.asStateFlow()
+        private val observer = delegate.states(object : Observer<ViewerStore.State> {
+            override fun onNext(value: ViewerStore.State) {
+                _state.update { value }
+            }
+
+            override fun onComplete() = Unit
+        })
+
+        override fun dispose() {
+            observer.dispose()
+            delegate.dispose()
+        }
+    }
 
     private sealed interface Action { data object Load : Action }
     private sealed interface Msg {
@@ -146,7 +175,7 @@ class ViewerStoreFactory(
                 ViewerStore.Intent.Retry -> load(state().index)
                 is ViewerStore.Intent.ZoomGesture -> dispatch(
                     Msg.Zoomed(
-                        ViewerZoom.apply(
+                        zoomRules.apply(
                             zoom = state().zoom,
                             zoomChange = intent.zoomChange,
                             panX = intent.panX,
@@ -160,7 +189,7 @@ class ViewerStoreFactory(
                         ),
                     ),
                 )
-                ViewerStore.Intent.ToggleZoom -> dispatch(Msg.Zoomed(ViewerZoom.toggle(state().zoom)))
+                ViewerStore.Intent.ToggleZoom -> dispatch(Msg.Zoomed(zoomRules.toggle(state().zoom)))
                 ViewerStore.Intent.ToggleFullscreen -> dispatch(
                     Msg.FullscreenChanged(!state().isFullscreen),
                 )

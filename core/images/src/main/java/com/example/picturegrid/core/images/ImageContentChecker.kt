@@ -22,7 +22,11 @@ fun interface ImageContentChecker {
  * память под полноразмерный bitmap не выделяется. Данные считаются
  * изображением, если в заголовке указаны корректные размеры.
  */
-object BitmapImageContentChecker : ImageContentChecker {
+class BitmapImageContentChecker : ImageContentChecker {
+
+    companion object {
+        fun isImage(bytes: ByteArray): Boolean = BitmapImageContentChecker().isImage(bytes)
+    }
 
     override fun isImage(bytes: ByteArray): Boolean {
         if (bytes.isEmpty()) return false

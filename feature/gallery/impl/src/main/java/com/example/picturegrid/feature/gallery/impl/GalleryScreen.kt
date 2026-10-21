@@ -3,36 +3,31 @@ package com.example.picturegrid.feature.gallery.impl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.arkivanov.mvikotlin.core.rx.Observer
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arkivanov.mvikotlin.core.store.Store
-import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
-import com.example.picturegrid.feature.gallery.api.GalleryImages
-import com.example.picturegrid.feature.gallery.api.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
 import com.example.picturegrid.feature.gallery.api.ImageSelection
 import com.example.picturegrid.feature.gallery.api.NetworkMonitor
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @Composable
-fun GalleryScreen(
-    repository: GalleryRepository? = null,
-    networkMonitor: NetworkMonitor? = null,
-    onImageClick: (ImageSelection) -> Unit = {},
+internal fun GalleryScreen(
     modifier: Modifier = Modifier,
+    repository: GalleryRepository = koinInject(),
+    networkMonitor: NetworkMonitor = koinInject(),
+    storeFactory: GalleryStoreFactory = koinInject(),
+    onImageClick: (ImageSelection) -> Unit = {},
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val repo = repository ?: createDefaultRepository(context)
-    val monitor = networkMonitor ?: remember(context) { AndroidNetworkMonitor(context) }
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
-    val store = remember { GalleryStoreFactory(DefaultStoreFactory(), repo, syncScheduler = { GallerySyncScheduler.schedule(context) }).create() }
+    val store = remember(storeFactory) { storeFactory.create() }
     DisposableEffect(store) { onDispose { store.dispose() } }
     DisposableEffect(lifecycleOwner, store) {
         val observer = LifecycleEventObserver { _, event ->
@@ -43,14 +38,14 @@ fun GalleryScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    DisposableEffect(store, monitor) {
+    DisposableEffect(store, networkMonitor) {
         // Фоновая синхронизация обновляет сохранённый список, но экран об
         // этом не узнаёт. Поэтому при восстановлении сети список
         // перезапрашивается: требование задания — при появлении сети файл
         // загружается снова, и пользователь видит новые данные на экране.
         var wasAvailable: Boolean? = null
         val job = coroutineScope.launch {
-            monitor.isAvailable.collect { available ->
+            networkMonitor.isAvailable.collect { available ->
                 val previous = wasAvailable
                 wasAvailable = available
                 if (shouldRefreshOnNetworkChange(previous, available)) {
@@ -60,18 +55,11 @@ fun GalleryScreen(
         }
         onDispose { job.cancel() }
     }
-    var state by remember { mutableStateOf(GalleryStore.State()) }
-    DisposableEffect(store) {
-        val disposable = store.states(object : Observer<GalleryStore.State> {
-            override fun onNext(value: GalleryStore.State) { state = value }
-            override fun onComplete() {}
-        })
-        onDispose { disposable.dispose() }
-    }
+    val state by store.stateFlow.collectAsStateWithLifecycle()
     GalleryContent(
         state = state,
         onRetry = { store.accept(GalleryStore.Intent.Retry) },
-        onImageClick = { item -> onImageClick(GalleryImages.selection(state.items, item.id)) },
+        onImageClick = { item -> onImageClick(com.example.picturegrid.feature.gallery.api.selection(state.items, item.id)) },
         modifier = modifier,
     )
 }

@@ -1,20 +1,23 @@
 package com.example.picturegrid
 
 import android.app.Application
-import coil3.SingletonImageLoader
-import com.example.picturegrid.core.images.ImageLoaderFactory
+import org.koin.android.ext.koin.androidContext
+import org.koin.androidx.workmanager.koin.workManagerFactory
+import org.koin.core.context.startKoin
+import org.koin.core.context.GlobalContext
 
-/**
- * Приложение устанавливает общий `ImageLoader` Coil.
- *
- * Загрузчик создаётся один раз на процесс: так в приложении не появляется
- * нескольких независимых кэшей изображений, а превью и оригиналы
- * используют один и тот же кэш.
- */
 class PictureGridApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        SingletonImageLoader.setSafe { context -> ImageLoaderFactory.create(context) }
+        if (GlobalContext.getOrNull() == null) startKoin {
+            androidContext(this@PictureGridApplication)
+            workManagerFactory()
+            modules(
+                appModule(),
+                com.example.picturegrid.feature.gallery.impl.galleryModule(),
+                com.example.picturegrid.feature.viewer.impl.viewerModule(),
+            )
+        }
     }
 }

@@ -24,9 +24,17 @@ import java.util.concurrent.TimeUnit
  * выполняется с `ConstraintsSizeResolver`, то есть декодируется под размер
  * ячейки, а не в оригинальном разрешении.
  */
-object ImageLoaderFactory {
+class ImageLoaderFactory(
+    private val context: Context,
+    private val classifier: ImageContentClassifier,
+) {
 
-    fun create(context: Context): ImageLoader {
+    companion object {
+        fun create(context: Context): ImageLoader =
+            ImageLoaderFactory(context, ImageContentClassifier()).create()
+    }
+
+    fun create(): ImageLoader {
         val appContext = context.applicationContext
         return ImageLoader.Builder(appContext)
             .components {
@@ -53,7 +61,7 @@ object ImageLoaderFactory {
      * загрузки картинок и списка не отличалось.
      */
     private fun imageHttpClient(): OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(ImageContentInterceptor())
+        .addInterceptor(ImageContentInterceptor(classifier))
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .writeTimeout(15, TimeUnit.SECONDS)

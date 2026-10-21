@@ -25,8 +25,8 @@ import java.util.concurrent.TimeUnit
 class RetrofitNetworkClient(
     okHttpClient: OkHttpClient = defaultOkHttpClient(),
     baseUrl: String = "https://example.com/",
-    private val maxTextBytes: Long = NetworkLimits.MAX_TEXT_BYTES,
-    private val maxBinaryBytes: Long = NetworkLimits.MAX_BINARY_BYTES,
+    private val maxTextBytes: Long = MAX_TEXT_BYTES,
+    private val maxBinaryBytes: Long = MAX_BINARY_BYTES,
 ) : NetworkClient {
 
     private val api: NetworkApi = Retrofit.Builder()

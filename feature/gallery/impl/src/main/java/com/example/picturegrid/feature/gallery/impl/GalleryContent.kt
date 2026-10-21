@@ -31,11 +31,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.example.picturegrid.feature.gallery.api.GalleryItem
-import com.example.picturegrid.feature.gallery.api.PlaceholderReason
+import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
+import com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason
 
 @Composable
-fun GalleryContent(
+internal fun GalleryContent(
     state: GalleryStore.State,
     onRetry: () -> Unit,
     onImageClick: (GalleryItem.Image) -> Unit,

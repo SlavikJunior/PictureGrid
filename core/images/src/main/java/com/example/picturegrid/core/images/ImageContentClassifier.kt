@@ -2,6 +2,10 @@ package com.example.picturegrid.core.images
 
 import java.io.File
 
+private const val WEBP_BRAND_OFFSET = 8
+private const val BMFF_BRAND_OFFSET = 4
+private const val SIGNATURE_PROBE_BYTES = 32
+
 /**
  * Определение того, является ли содержимое ответа изображением.
  *
@@ -14,7 +18,21 @@ import java.io.File
  * изображение распознаётся уже при декодировании и считается ошибкой
  * загрузки, а не отсутствием изображения.
  */
-object ImageContentClassifier {
+class ImageContentClassifier {
+
+    companion object {
+        fun isNotImageContentType(contentType: String?): Boolean =
+            ImageContentClassifier().isNotImageContentType(contentType)
+
+        fun isImageContentType(contentType: String?): Boolean =
+            ImageContentClassifier().isImageContentType(contentType)
+
+        fun isImageSignature(bytes: ByteArray): Boolean =
+            ImageContentClassifier().isImageSignature(bytes)
+
+        fun isImageFile(file: File): Boolean =
+            ImageContentClassifier().isImageFile(file)
+    }
 
     /**
      * Заведомо не-изображения по заголовку `Content-Type`.
@@ -102,10 +120,6 @@ object ImageContentClassifier {
     private val RIFF_SIGNATURE = "RIFF".toByteArray(Charsets.US_ASCII)
     private val BMP_SIGNATURE = "BM".toByteArray(Charsets.US_ASCII)
     private val ICO_SIGNATURE = byteArrayOf(0x00, 0x00, 0x01, 0x00)
-
-    private const val WEBP_BRAND_OFFSET = 8
-    private const val BMFF_BRAND_OFFSET = 4
-    private const val SIGNATURE_PROBE_BYTES = 32
 
     private val ISO_BMFF_IMAGE_BRANDS = setOf(
         "avif", "avis", "heic", "heix", "heif", "hevc", "mif1", "msf1",

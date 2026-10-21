@@ -5,15 +5,22 @@ import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
-import com.example.picturegrid.feature.gallery.api.GalleryItem
-import com.example.picturegrid.feature.gallery.api.GalleryRefreshResult
-import com.example.picturegrid.feature.gallery.api.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import com.arkivanov.mvikotlin.core.rx.Observer
 
-interface GalleryStore : Store<GalleryStore.Intent, GalleryStore.State, Nothing> {
+internal interface GalleryStore : Store<GalleryStore.Intent, GalleryStore.State, Nothing> {
+
+    val stateFlow: StateFlow<State>
 
     data class State(
         val items: List<GalleryItem> = emptyList(),
@@ -38,7 +45,7 @@ interface GalleryStore : Store<GalleryStore.Intent, GalleryStore.State, Nothing>
     }
 }
 
-class GalleryStoreFactory(
+internal class GalleryStoreFactory(
     private val storeFactory: StoreFactory,
     private val repository: GalleryRepository,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -46,14 +53,35 @@ class GalleryStoreFactory(
     private val syncScheduler: () -> Unit = {},
 ) {
 
-    fun create(): GalleryStore =
-        object : GalleryStore, Store<GalleryStore.Intent, GalleryStore.State, Nothing> by storeFactory.create(
+    fun create(): GalleryStore {
+        val delegate = storeFactory.create<GalleryStore.Intent, Action, Msg, GalleryStore.State, Nothing>(
             name = "GalleryStore",
             initialState = GalleryStore.State(),
             bootstrapper = SimpleBootstrapper(Action.Load),
             executorFactory = ::ExecutorImpl,
             reducer = ReducerImpl,
-        ) {}
+        )
+        return StateFlowGalleryStore(delegate)
+    }
+
+    private class StateFlowGalleryStore(
+        private val delegate: Store<GalleryStore.Intent, GalleryStore.State, Nothing>,
+    ) : GalleryStore, Store<GalleryStore.Intent, GalleryStore.State, Nothing> by delegate {
+        private val _state = MutableStateFlow(GalleryStore.State())
+        override val stateFlow: StateFlow<GalleryStore.State> = _state.asStateFlow()
+        private val observer = delegate.states(object : Observer<GalleryStore.State> {
+            override fun onNext(value: GalleryStore.State) {
+                _state.update { value }
+            }
+
+            override fun onComplete() = Unit
+        })
+
+        override fun dispose() {
+            observer.dispose()
+            delegate.dispose()
+        }
+    }
 
     private sealed interface Action {
         data object Load : Action
@@ -175,8 +203,8 @@ class GalleryStoreFactory(
     }
 }
 
-private fun com.example.picturegrid.feature.gallery.api.GalleryError.toMessage(): String =
+private fun com.example.picturegrid.feature.gallery.api.domain.GalleryError.toMessage(): String =
     when (this) {
-        is com.example.picturegrid.feature.gallery.api.GalleryError.Network -> "Сеть: ${message}"
-        is com.example.picturegrid.feature.gallery.api.GalleryError.Storage -> "Хранилище: ${message}"
+        is com.example.picturegrid.feature.gallery.api.domain.GalleryError.Network -> "Сеть: ${message}"
+        is com.example.picturegrid.feature.gallery.api.domain.GalleryError.Storage -> "Хранилище: ${message}"
     }
