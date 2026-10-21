@@ -15,11 +15,13 @@ import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
 import com.example.picturegrid.feature.gallery.api.ImageSelection
 import com.example.picturegrid.feature.gallery.api.NetworkMonitor
 import kotlinx.coroutines.launch
+import coil3.ImageLoader
 import org.koin.compose.koinInject
 
 @Composable
 internal fun GalleryScreen(
     modifier: Modifier = Modifier,
+    imageLoader: ImageLoader = koinInject(),
     repository: GalleryRepository = koinInject(),
     networkMonitor: NetworkMonitor = koinInject(),
     storeFactory: GalleryStoreFactory = koinInject(),
@@ -60,6 +62,7 @@ internal fun GalleryScreen(
         state = state,
         onRetry = { store.accept(GalleryStore.Intent.Retry) },
         onImageClick = { item -> onImageClick(com.example.picturegrid.feature.gallery.api.selection(state.items, item.id)) },
+        imageLoader = imageLoader,
         modifier = modifier,
     )
 }

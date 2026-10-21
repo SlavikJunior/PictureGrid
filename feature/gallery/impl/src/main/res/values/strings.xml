@@ -1,0 +1,10 @@
+<resources>
+    <string name="gallery_title">PictureGrid</string>
+    <string name="gallery_subtitle">Ваша коллекция изображений</string>
+    <string name="gallery_retry">Повторить</string>
+    <string name="gallery_empty">Список пуст</string>
+    <string name="gallery_refresh">Обновить</string>
+    <string name="gallery_not_url">Не ссылка</string>
+    <string name="gallery_not_image">Не изображение</string>
+    <string name="gallery_load_failed">Ошибка загрузки</string>
+</resources>

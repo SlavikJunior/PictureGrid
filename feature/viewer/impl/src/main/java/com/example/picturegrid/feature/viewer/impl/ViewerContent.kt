@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Button
@@ -35,19 +36,28 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
+import coil3.ImageLoader
 import java.io.File
 
 @Composable
 internal fun ViewerContent(
+    modifier: Modifier = Modifier,
+    imageLoader: ImageLoader? = null,
     state: ViewerStore.State,
     onIntent: (ViewerStore.Intent) -> Unit,
     onShare: (String) -> Unit = {},
     onOpenInBrowser: (String) -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    val actualImageLoader = imageLoader ?: remember {
+        ImageLoader.Builder(context).build()
+    }
     // Фон рисует Compose, а не окно: так фон просмотра совпадает с
     // MaterialTheme в светлой и тёмной темах.
     Surface(modifier = modifier, color = MaterialTheme.colorScheme.background) {
@@ -60,7 +70,7 @@ internal fun ViewerContent(
                 )
             }
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                ViewerPager(state = state, onIntent = onIntent)
+                ViewerPager(state = state, imageLoader = actualImageLoader, onIntent = onIntent)
             }
         }
     }
@@ -75,6 +85,7 @@ internal fun ViewerContent(
 @Composable
 private fun ViewerPager(
     state: ViewerStore.State,
+    imageLoader: ImageLoader,
     onIntent: (ViewerStore.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -104,10 +115,11 @@ private fun ViewerPager(
         beyondViewportPageCount = 1,
     ) { page ->
         if (page == state.index) {
-            CurrentImage(state = state, onIntent = onIntent)
+            CurrentImage(state = state, imageLoader = imageLoader, onIntent = onIntent)
         } else {
             AsyncImage(
                 model = state.urls[page],
+                imageLoader = imageLoader,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),
@@ -123,6 +135,7 @@ private fun ViewerPager(
 @Composable
 private fun CurrentImage(
     state: ViewerStore.State,
+    imageLoader: ImageLoader,
     onIntent: (ViewerStore.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -133,7 +146,7 @@ private fun CurrentImage(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(state.error, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
                     Button(onClick = { onIntent(ViewerStore.Intent.Retry) }, modifier = Modifier.padding(top = 12.dp)) {
-                        Text("Повторить")
+                        Text(stringResource(R.string.viewer_retry))
                     }
                 }
             }
@@ -141,6 +154,7 @@ private fun CurrentImage(
                 file = state.file,
                 zoom = state.zoom,
                 onIntent = onIntent,
+                imageLoader = imageLoader,
             )
         }
     }
@@ -155,15 +169,25 @@ private fun ViewerActions(
     onOpenInBrowser: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
     ) {
-        TextButton(onClick = onShare) {
-            Text("Поделиться")
-        }
-        TextButton(onClick = onOpenInBrowser) {
-            Text("В браузере")
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        ) {
+            TextButton(onClick = onShare) {
+                Text(stringResource(R.string.viewer_share))
+            }
+            TextButton(onClick = onOpenInBrowser) {
+                Text(stringResource(R.string.viewer_open_in_browser))
+            }
         }
     }
 }
@@ -177,6 +201,7 @@ private fun ViewerActions(
 @Composable
 private fun ZoomableImage(
     file: File,
+    imageLoader: ImageLoader,
     zoom: ViewerStore.Zoom,
     onIntent: (ViewerStore.Intent) -> Unit,
     modifier: Modifier = Modifier,
@@ -229,6 +254,7 @@ private fun ZoomableImage(
     ) {
         AsyncImage(
             model = file,
+            imageLoader = imageLoader,
             contentDescription = null,
             contentScale = ContentScale.Fit,
             onState = { painterState ->
@@ -256,4 +282,14 @@ private fun ZoomableImage(
  * Используется инструментальным тестом: без метки нельзя найти узел и
  * выполнить щипок.
  */
-const val ZOOMABLE_TEST_TAG = "viewer_zoom_image"
+internal const val ZOOMABLE_TEST_TAG = "viewer_zoom_image"
+
+@Preview(showBackground = true)
+@Composable
+private fun ViewerContentPreview() {
+    ViewerContent(
+        imageLoader = ImageLoader.Builder(androidx.compose.ui.platform.LocalContext.current).build(),
+        state = ViewerStore.State(urls = listOf("https://example.com/image.png"), index = 0),
+        onIntent = {},
+    )
+}
