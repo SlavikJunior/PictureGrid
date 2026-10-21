@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -90,11 +91,23 @@ fun GalleryContent(
                 }
                 if (state.refreshError != null) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                        Text(
-                            text = state.refreshError,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(8.dp),
-                        )
+                        // Фон обязателен: без него сообщение ложилось прямо на
+                        // превью и не читалось.
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            shape = RoundedCornerShape(
+                                bottomStart = 8.dp,
+                                bottomEnd = 8.dp,
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                text = state.refreshError,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(8.dp),
+                            )
+                        }
                     }
                 }
             }
