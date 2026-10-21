@@ -3,6 +3,7 @@ package com.example.picturegrid.feature.gallery.impl
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -152,8 +153,11 @@ private fun ImageCell(
             ImageCellFailure.LoadFailed -> Button(
                 onClick = { retryKey++; failure = null },
                 modifier = Modifier.align(Alignment.Center),
+                // Ячейка узкая: без этих параметров подпись переносилась
+                // по-середине слова («Повтори / ть»).
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
             ) {
-                Text("Повторить")
+                Text("Повторить", maxLines = 1, softWrap = false)
             }
             null -> Unit
         }
