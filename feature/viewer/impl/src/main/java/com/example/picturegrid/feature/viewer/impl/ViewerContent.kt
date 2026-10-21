@@ -32,6 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -220,7 +221,10 @@ private fun ZoomableImage(
                     onDoubleTap = { currentIntent(ViewerStore.Intent.ToggleZoom) },
                 )
             }
-            .transformable(transformableState, canPan = canPan),
+            .transformable(transformableState, canPan = canPan)
+            // Метка нужна инструментальному тесту: по ней находится узел,
+            // на котором выполняется жест масштабирования.
+            .testTag(ZOOMABLE_TEST_TAG),
         contentAlignment = Alignment.Center,
     ) {
         AsyncImage(
@@ -245,3 +249,11 @@ private fun ZoomableImage(
         )
     }
 }
+
+/**
+ * Метка узла, на котором выполняется жест масштабирования.
+ *
+ * Используется инструментальным тестом: без метки нельзя найти узел и
+ * выполнить щипок.
+ */
+const val ZOOMABLE_TEST_TAG = "viewer_zoom_image"
