@@ -27,8 +27,3 @@ class NavigationRouter(
         backStack.removeLastOrNull()
     }
 }
-
-data class ViewerSelection(
-    val urls: List<String>,
-    val index: Int,
-)
