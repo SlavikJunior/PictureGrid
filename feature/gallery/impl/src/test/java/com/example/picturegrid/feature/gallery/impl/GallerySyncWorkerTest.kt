@@ -6,10 +6,10 @@ import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.testing.WorkManagerTestInitHelper
-import com.example.picturegrid.feature.gallery.api.GalleryError
-import com.example.picturegrid.feature.gallery.api.GalleryItem
-import com.example.picturegrid.feature.gallery.api.GalleryRefreshResult
-import com.example.picturegrid.feature.gallery.api.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.GalleryError
+import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before

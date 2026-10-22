@@ -2,7 +2,7 @@ package com.example.picturegrid.feature.gallery.impl
 
 import com.example.picturegrid.core.network.NetworkClient
 import com.example.picturegrid.core.network.NetworkResult
-import com.example.picturegrid.feature.gallery.api.GalleryRefreshResult
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope

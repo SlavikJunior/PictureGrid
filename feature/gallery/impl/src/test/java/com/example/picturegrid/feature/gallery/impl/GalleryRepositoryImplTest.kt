@@ -3,8 +3,8 @@ package com.example.picturegrid.feature.gallery.impl
 import com.example.picturegrid.core.network.NetworkClient
 import com.example.picturegrid.core.network.NetworkError
 import com.example.picturegrid.core.network.NetworkResult
-import com.example.picturegrid.feature.gallery.api.GalleryError
-import com.example.picturegrid.feature.gallery.api.GalleryRefreshResult
+import com.example.picturegrid.feature.gallery.api.domain.GalleryError
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

@@ -1,8 +1,8 @@
 package com.example.picturegrid.feature.gallery.impl
 
 import com.example.picturegrid.core.network.RetrofitNetworkClient
-import com.example.picturegrid.feature.gallery.api.GalleryError
-import com.example.picturegrid.feature.gallery.api.GalleryRefreshResult
+import com.example.picturegrid.feature.gallery.api.domain.GalleryError
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse

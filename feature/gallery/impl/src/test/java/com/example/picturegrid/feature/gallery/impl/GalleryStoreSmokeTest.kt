@@ -1,9 +1,9 @@
 package com.example.picturegrid.feature.gallery.impl
 
-import com.example.picturegrid.feature.gallery.api.GalleryItem
-import com.example.picturegrid.feature.gallery.api.GalleryRefreshResult
-import com.example.picturegrid.feature.gallery.api.GalleryRepository
-import com.example.picturegrid.feature.gallery.api.PlaceholderReason
+import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

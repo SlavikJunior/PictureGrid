@@ -2,10 +2,10 @@ package com.example.picturegrid.feature.gallery.impl
 
 import com.example.picturegrid.core.network.NetworkError
 import com.example.picturegrid.core.network.NetworkResult
-import com.example.picturegrid.feature.gallery.api.GalleryError
-import com.example.picturegrid.feature.gallery.api.GalleryItem
-import com.example.picturegrid.feature.gallery.api.GalleryRefreshResult
-import com.example.picturegrid.feature.gallery.api.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.GalleryError
+import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
+import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher

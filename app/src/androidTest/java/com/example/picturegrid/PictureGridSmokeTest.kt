@@ -2,8 +2,8 @@ package com.example.picturegrid
 
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import coil3.SingletonImageLoader
+import coil3.ImageLoader
+import org.koin.core.context.GlobalContext
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -30,7 +30,11 @@ class PictureGridSmokeTest {
 
     @Test
     fun imageLoaderIsSharedForTheProcess() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        assertNotNull("загрузчик изображений должен быть установлен", SingletonImageLoader.get(context))
+        ActivityScenario.launch(MainActivity::class.java).use {
+            assertNotNull(
+                "загрузчик изображений должен быть зарегистрирован в Koin",
+                GlobalContext.get().get<ImageLoader>(),
+            )
+        }
     }
 }

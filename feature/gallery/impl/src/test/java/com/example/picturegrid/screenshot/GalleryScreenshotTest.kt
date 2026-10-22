@@ -5,13 +5,12 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import coil3.ImageLoader
 import coil3.Uri
-import coil3.SingletonImageLoader
 import coil3.fetch.Fetcher
 import coil3.fetch.FetchResult
 import com.example.picturegrid.core.designsystem.PictureGridTheme
 import com.example.picturegrid.core.images.NotImageContentException
-import com.example.picturegrid.feature.gallery.api.GalleryItem
-import com.example.picturegrid.feature.gallery.api.PlaceholderReason
+import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
+import com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason
 import com.example.picturegrid.feature.gallery.impl.GalleryContent
 import com.example.picturegrid.feature.gallery.impl.GalleryStore
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -21,11 +20,15 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
+import org.robolectric.annotation.Config
 import java.io.IOException
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [30])
 class GalleryScreenshotTest {
+
+    private lateinit var imageLoader: ImageLoader
 
     @get:Rule
     val composeRule = createComposeRule()
@@ -54,8 +57,7 @@ class GalleryScreenshotTest {
         // Тест не должен зависеть от сети: Coil получает загрузчик, который
         // всегда завершает запрос ошибкой, поэтому состояние ячейки
         // детерминировано.
-        SingletonImageLoader.setSafe { context ->
-            ImageLoader.Builder(context)
+        imageLoader = ImageLoader.Builder(org.robolectric.RuntimeEnvironment.getApplication())
                 .components {
                     add(
                         Fetcher.Factory<Uri> { data, _, _ ->
@@ -70,7 +72,6 @@ class GalleryScreenshotTest {
                     )
                 }
                 .build()
-        }
     }
 
     @Test
@@ -79,6 +80,7 @@ class GalleryScreenshotTest {
             PictureGridTheme(darkTheme = false, dynamicColor = false) {
                 Surface {
                     GalleryContent(
+                        imageLoader = imageLoader,
                         state = fakeState,
                         onRetry = {},
                         onImageClick = {},
@@ -96,6 +98,7 @@ class GalleryScreenshotTest {
             PictureGridTheme(darkTheme = true, dynamicColor = false) {
                 Surface {
                     GalleryContent(
+                        imageLoader = imageLoader,
                         state = fakeState,
                         onRetry = {},
                         onImageClick = {},
@@ -113,6 +116,7 @@ class GalleryScreenshotTest {
             PictureGridTheme(darkTheme = false, dynamicColor = false) {
                 Surface {
                     GalleryContent(
+                        imageLoader = imageLoader,
                         state = GalleryStore.State(isLoading = true),
                         onRetry = {},
                         onImageClick = {},
@@ -132,6 +136,7 @@ class GalleryScreenshotTest {
             PictureGridTheme(darkTheme = false, dynamicColor = false) {
                 Surface {
                     GalleryContent(
+                        imageLoader = imageLoader,
                         state = GalleryStore.State(items = emptyList(), isLoading = false),
                         onRetry = {},
                         onImageClick = {},

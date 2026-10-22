@@ -14,17 +14,19 @@ import org.robolectric.RobolectricTestRunner
 class GallerySyncSchedulerTest {
 
     private lateinit var context: Context
+    private lateinit var scheduler: GallerySyncScheduler
 
     @Before
     fun setUp() {
         context = org.robolectric.RuntimeEnvironment.getApplication()
         WorkManagerTestInitHelper.initializeTestWorkManager(context)
+        scheduler = GallerySyncScheduler(WorkManager.getInstance(context))
     }
 
     @Test
     fun `repeated schedule keeps a single unique work`() {
-        GallerySyncScheduler.schedule(context)
-        GallerySyncScheduler.schedule(context)
+        scheduler.schedule()
+        scheduler.schedule()
 
         val workInfos = WorkManager.getInstance(context)
             .getWorkInfosForUniqueWork(GallerySyncScheduler.UNIQUE_WORK_NAME)
@@ -35,7 +37,7 @@ class GallerySyncSchedulerTest {
 
     @Test
     fun `scheduled work has connected network constraint`() {
-        GallerySyncScheduler.schedule(context)
+        scheduler.schedule()
 
         val workInfos = WorkManager.getInstance(context)
             .getWorkInfosForUniqueWork(GallerySyncScheduler.UNIQUE_WORK_NAME)

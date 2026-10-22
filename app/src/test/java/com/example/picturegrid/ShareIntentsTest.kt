@@ -16,7 +16,7 @@ class ShareIntentsTest {
 
     @Test
     fun `share intent sends the url as text`() {
-        val intent = ShareIntents.createShare(url)
+        val intent = ShareIntents().createShare(url)
         assertEquals(Intent.ACTION_SEND, intent.action)
         assertEquals("text/plain", intent.type)
         assertEquals(url, intent.getStringExtra(Intent.EXTRA_TEXT))
@@ -24,7 +24,7 @@ class ShareIntentsTest {
 
     @Test
     fun `open in browser intent views the url`() {
-        val intent = ShareIntents.createOpenInBrowser(url)
+        val intent = ShareIntents().createOpenInBrowser(url)
         assertEquals(Intent.ACTION_VIEW, intent.action)
         assertEquals(url, intent.data?.toString())
     }
