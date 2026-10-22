@@ -11,6 +11,6 @@ import kotlinx.coroutines.flow.Flow
  * Контракт живёт в api-модуле: экран галереи принимает монитор снаружи,
  * поэтому потребитель должен видеть его тип.
  */
-interface NetworkMonitor {
-    val isAvailable: Flow<Boolean>
+public interface NetworkMonitor {
+    public val isAvailable: Flow<Boolean>
 }

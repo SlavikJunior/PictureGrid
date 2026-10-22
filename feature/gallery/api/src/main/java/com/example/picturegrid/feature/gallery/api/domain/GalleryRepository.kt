@@ -1,6 +1,6 @@
 package com.example.picturegrid.feature.gallery.api.domain
 
-interface GalleryRepository {
-    suspend fun getCached(): List<GalleryItem>?
-    suspend fun refresh(): GalleryRefreshResult
+public interface GalleryRepository {
+    public suspend fun getCached(): List<GalleryItem>?
+    public suspend fun refresh(): GalleryRefreshResult
 }

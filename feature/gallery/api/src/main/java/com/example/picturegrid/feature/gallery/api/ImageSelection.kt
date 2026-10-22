@@ -8,9 +8,9 @@ import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
  * Список нужен просмотрщику для перелистывания: позиция выбранного
  * изображения определяет, с какого изображения начинается просмотр.
  */
-data class ImageSelection(
-    val urls: List<String>,
-    val index: Int,
+public data class ImageSelection(
+    public val urls: List<String>,
+    public val index: Int,
 )
 
 /**
@@ -20,7 +20,7 @@ data class ImageSelection(
  * изображениями, листать их нельзя. Если выбранного элемента в списке
  * нет, берётся первое изображение.
  */
-fun selection(items: List<GalleryItem>, selectedId: String): ImageSelection {
+public fun selection(items: List<GalleryItem>, selectedId: String): ImageSelection {
     val images = items.filterIsInstance<GalleryItem.Image>()
     val index = images.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
     return ImageSelection(urls = images.map { it.source }, index = index)
