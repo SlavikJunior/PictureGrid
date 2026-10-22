@@ -56,14 +56,16 @@ class MainActivity : ComponentActivity(), KoinComponent {
      */
     private fun startShare(url: String) {
         val chooser = Intent.createChooser(shareIntents.createShare(url), null)
-        startActivitySafely(chooser) { "Нет приложения для отправки ссылки" }
+        startActivitySafely(chooser) { getString(R.string.app_error_no_share_app) }
     }
 
     /**
      * Открытие ссылки в браузере.
      */
     private fun startOpenInBrowser(url: String) {
-        startActivitySafely(shareIntents.createOpenInBrowser(url)) { "Нет приложения для открытия ссылки" }
+        startActivitySafely(shareIntents.createOpenInBrowser(url)) {
+            getString(R.string.app_error_no_browser_app)
+        }
     }
 
     /**

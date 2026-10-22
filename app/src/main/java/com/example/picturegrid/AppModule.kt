@@ -17,7 +17,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 /** App-level Koin graph for infrastructure shared by features. */
-fun appModule(): Module = module {
+internal fun appModule(): Module = module {
     single<NetworkClient> { RetrofitNetworkClient() }
     single<ImageStorage> {
         ImageStorageImpl(androidContext().filesDir.resolve("images/originals"))

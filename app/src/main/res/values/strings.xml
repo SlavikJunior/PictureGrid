@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">PictureGrid</string>
+    <string name="app_error_no_share_app">Нет приложения для отправки ссылки</string>
+    <string name="app_error_no_browser_app">Нет приложения для открытия ссылки</string>
 </resources>

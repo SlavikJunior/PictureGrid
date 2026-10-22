@@ -10,7 +10,7 @@ import android.net.Uri
  * Viewer-фича оставалась независимой от Android: она получает готовые
  * действия колбэками.
  */
-class ShareIntents {
+internal class ShareIntents {
 
     /**
      * Отправка URL другим приложениям.
