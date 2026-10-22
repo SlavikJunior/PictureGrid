@@ -11,8 +11,6 @@ import com.example.picturegrid.core.designsystem.PictureGridTheme
 import com.example.picturegrid.core.images.NotImageContentException
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason
-import com.example.picturegrid.feature.gallery.impl.GalleryContent
-import com.example.picturegrid.feature.gallery.impl.GalleryStore
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Before
 import org.junit.Rule
@@ -22,6 +20,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.Config
 import java.io.IOException
+import com.example.picturegrid.feature.gallery.impl.presentation.state.GalleryStore
+import com.example.picturegrid.feature.gallery.impl.presentation.ui.GalleryContent
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

@@ -4,8 +4,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import com.example.picturegrid.core.designsystem.PictureGridTheme
-import com.example.picturegrid.feature.viewer.impl.ViewerContent
-import com.example.picturegrid.feature.viewer.impl.ViewerStore
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
 import org.junit.Test
@@ -14,6 +12,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.Config
 import java.io.File
+import com.example.picturegrid.feature.viewer.impl.presentation.state.ViewerStore
+import com.example.picturegrid.feature.viewer.impl.presentation.ui.ViewerContent
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

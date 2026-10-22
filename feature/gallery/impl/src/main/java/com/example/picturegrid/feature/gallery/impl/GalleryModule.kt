@@ -8,6 +8,13 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.worker
+import com.example.picturegrid.feature.gallery.impl.data.AndroidNetworkMonitor
+import com.example.picturegrid.feature.gallery.impl.data.GalleryListParser
+import com.example.picturegrid.feature.gallery.impl.data.GalleryListStorage
+import com.example.picturegrid.feature.gallery.impl.data.GalleryRepositoryImpl
+import com.example.picturegrid.feature.gallery.impl.data.GallerySyncScheduler
+import com.example.picturegrid.feature.gallery.impl.data.GallerySyncWorker
+import com.example.picturegrid.feature.gallery.impl.presentation.state.GalleryStoreFactory
 
 /** Koin-граф зависимостей галереи. */
 fun galleryModule(): Module = module {

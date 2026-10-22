@@ -14,6 +14,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import com.example.picturegrid.feature.viewer.impl.presentation.state.ViewerStore
+import com.example.picturegrid.feature.viewer.impl.presentation.ui.ViewerContent
+import com.example.picturegrid.feature.viewer.impl.presentation.ui.ZOOMABLE_TEST_TAG
 
 /**
  * Инструментальная проверка щипка в просмотрщике.

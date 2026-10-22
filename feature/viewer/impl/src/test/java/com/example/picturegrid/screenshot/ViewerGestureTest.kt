@@ -10,8 +10,6 @@ import androidx.compose.ui.test.pinch
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import com.example.picturegrid.core.designsystem.PictureGridTheme
-import com.example.picturegrid.feature.viewer.impl.ViewerContent
-import com.example.picturegrid.feature.viewer.impl.ViewerStore
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -20,6 +18,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.Config
 import java.io.File
+import com.example.picturegrid.feature.viewer.impl.presentation.state.ViewerStore
+import com.example.picturegrid.feature.viewer.impl.presentation.ui.ViewerContent
 
 /**
  * Проверка жестов просмотрщика: щипок масштабирует изображение, двойное

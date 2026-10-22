@@ -10,7 +10,6 @@ import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
 import com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason
-import com.example.picturegrid.feature.gallery.impl.GalleryScreen
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Rule
@@ -19,6 +18,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.Config
+import com.example.picturegrid.feature.gallery.impl.presentation.ui.GalleryScreen
 
 /**
  * Проверка реакции галереи на восстановление сети.
@@ -45,7 +45,7 @@ class GalleryNetworkRecoveryTest {
             GalleryScreen(
                 repository = repository,
                 networkMonitor = monitor,
-                storeFactory = com.example.picturegrid.feature.gallery.impl.GalleryStoreFactory(
+                storeFactory = com.example.picturegrid.feature.gallery.impl.presentation.state.GalleryStoreFactory(
                     storeFactory = DefaultStoreFactory(),
                     repository = repository,
                 ),
