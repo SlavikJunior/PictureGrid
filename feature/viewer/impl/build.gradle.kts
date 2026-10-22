@@ -45,6 +45,7 @@ dependencies {
     implementation(libs.koin.compose)
     implementation(libs.koin.androidx.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.activity.compose)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)

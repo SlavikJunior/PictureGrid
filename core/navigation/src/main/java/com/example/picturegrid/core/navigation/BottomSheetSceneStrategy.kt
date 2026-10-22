@@ -63,7 +63,7 @@ class BottomSheetSceneStrategy<T : Any> : SceneStrategy<T> {
                     // панели управляются именно этим окном.
                     val view = LocalView.current
                     val controller = remember(sheetState, view) {
-                        BottomSheetController(sheetState, view)
+                        BottomSheetController(sheetState, view, onBack)
                     }
                     CompositionLocalProvider(
                         LocalBottomSheetController provides controller,

@@ -1,6 +1,7 @@
 package com.example.picturegrid.feature.viewer.impl
 
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -38,6 +39,17 @@ internal fun ViewerScreen(
     val sheetController = LocalBottomSheetController.current
     LaunchedEffect(state.isFullscreen) {
         sheetController?.setFullscreen(state.isFullscreen)
+    }
+
+    // Back обрабатывается здесь, а не только навигацией: после выхода из
+    // immersive-режима окно листа пересоздаётся, и системное нажатие может
+    // потеряться, оставив лист открытым без панели действий.
+    BackHandler(enabled = true) {
+        if (state.isFullscreen) {
+            store.accept(ViewerStore.Intent.ToggleFullscreen)
+        } else {
+            sheetController?.close()
+        }
     }
 
     ViewerContent(

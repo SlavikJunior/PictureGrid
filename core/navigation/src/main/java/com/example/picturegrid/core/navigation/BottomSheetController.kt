@@ -21,7 +21,17 @@ import androidx.core.view.WindowInsetsControllerCompat
 class BottomSheetController internal constructor(
     private val sheetState: SheetState,
     private val view: View,
+    private val onClose: () -> Unit,
 ) {
+
+    /**
+     * Закрывает лист тем же путём, что и системный Back.
+     *
+     * Нужен содержимому листа, чтобы обработать Back самостоятельно: после
+     * выхода из immersive-режима окно листа пересоздаётся и следующее
+     * системное нажатие может быть потеряно.
+     */
+    fun close() = onClose()
 
     /**
      * Полноэкранный режим: лист раскрывается, системные панели скрываются.
