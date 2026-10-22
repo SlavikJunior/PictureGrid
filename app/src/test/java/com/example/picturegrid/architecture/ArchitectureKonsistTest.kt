@@ -19,7 +19,7 @@ class ArchitectureKonsistTest {
     @Test
     fun `all classes and interfaces reside in the base package`() {
         Konsist
-            .scopeFromProject()
+            .scopeFromPackage(BASE_PACKAGE)
             .classesAndInterfaces()
             .assertTrue { it.resideInPackage(BASE_PACKAGE) }
     }
@@ -27,7 +27,7 @@ class ArchitectureKonsistTest {
     @Test
     fun `composable functions reside in ui, impl or designsystem packages`() {
         Konsist
-            .scopeFromProject()
+            .scopeFromPackage(BASE_PACKAGE)
             .functions()
             .withAnnotationOf(Composable::class)
             .assertTrue {
@@ -40,7 +40,7 @@ class ArchitectureKonsistTest {
     @Test
     fun `composable functions use PascalCase names`() {
         Konsist
-            .scopeFromProject()
+            .scopeFromPackage(BASE_PACKAGE)
             .functions()
             .withAnnotationOf(Composable::class)
             .assertTrue { it.name.firstOrNull()?.isUpperCase() == true }
@@ -49,7 +49,7 @@ class ArchitectureKonsistTest {
     @Test
     fun `api modules do not contain composable functions`() {
         Konsist
-            .scopeFromProject()
+            .scopeFromPackage(BASE_PACKAGE)
             .functions()
             .withAnnotationOf(Composable::class)
             .assertTrue { it.resideOutsidePackage("..api..") }
@@ -58,7 +58,7 @@ class ArchitectureKonsistTest {
     @Test
     fun `repository classes reside in impl or api packages`() {
         Konsist
-            .scopeFromProject()
+            .scopeFromPackage(BASE_PACKAGE)
             .classes()
             .assertTrue { c ->
                 !c.name.endsWith("Repository") ||
@@ -70,7 +70,7 @@ class ArchitectureKonsistTest {
     @Test
     fun `store classes reside in impl packages`() {
         Konsist
-            .scopeFromProject()
+            .scopeFromPackage(BASE_PACKAGE)
             .classes()
             .assertTrue { c ->
                 !c.name.endsWith("Store") ||

@@ -11,6 +11,8 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+includeBuild("build-logic")
+
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
@@ -29,6 +31,7 @@ include(":core:network")
 include(":core:images")
 include(":core:navigation")
 include(":core:designsystem")
+include(":core:architecture-tests")
 include(":feature:gallery:api")
 include(":feature:gallery:impl")
 include(":feature:viewer:api")
