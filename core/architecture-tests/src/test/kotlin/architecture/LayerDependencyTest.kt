@@ -64,9 +64,29 @@ class LayerDependencyTest {
     @Test
     fun `data does not depend on other feature modules`() {
         dataScope.files.assertTrue { file ->
+            val ownFeature = featureNameOf(file.packagee?.name)
             file.imports.none { import ->
-                import.name.contains(".feature.") && !import.name.contains(".domain.")
+                val importedFeature = featureNameOf(import.name)
+                importedFeature != null &&
+                    importedFeature != ownFeature &&
+                    !import.name.contains(".domain.")
             }
         }
     }
+}
+
+/**
+ * Имя фичи по имени пакета или импорта: `...feature.<name>...` → `<name>`.
+ *
+ * Нужно, чтобы отличать зависимость от чужой фичи от законной: слой `data`
+ * реализует контракт (`api`) своей же фичи, и это не нарушение INV-01.
+ */
+private fun featureNameOf(path: String?): String? {
+    if (path == null) return null
+    val marker = "feature."
+    val index = path.indexOf(marker)
+    if (index < 0) return null
+    return path.substring(index + marker.length)
+        .substringBefore('.')
+        .takeIf { it.isNotEmpty() }
 }
