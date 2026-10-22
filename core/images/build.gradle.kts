@@ -1,17 +1,9 @@
 plugins {
-    alias(libs.plugins.android.library)
+    id("convention.android.library")
 }
 
 android {
     namespace = "com.example.picturegrid.core.images"
-    compileSdk = 37
-    defaultConfig {
-        minSdk = 26
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.all { test ->
@@ -29,7 +21,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:common"))
     implementation(project(":core:network"))
     api(libs.coil.compose)
     implementation(libs.coil.network.okhttp)

@@ -8,12 +8,13 @@ import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.getByType
-import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
+import org.gradle.api.tasks.testing.Test
 
 /**
  * Общая конфигурация Android-модулей.
  *
- * Значения по умолчанию — в `AndroidDefaults`.
+ * Значения по умолчанию — в [AndroidDefaults]. Модуль задаёт только то, что
+ * действительно отличается: namespace, свои зависимости и тестовые опции.
  */
 fun Project.configureAndroidModule() {
     val isLibrary = plugins.hasPlugin("com.android.library")
@@ -30,10 +31,6 @@ fun Project.configureAndroidModule() {
             compileOptions {
                 sourceCompatibility = AndroidDefaults.JVM
                 targetCompatibility = AndroidDefaults.JVM
-            }
-
-            buildFeatures {
-                compose = true
             }
 
             packaging {
@@ -57,20 +54,6 @@ fun Project.configureAndroidModule() {
                 targetCompatibility = AndroidDefaults.JVM
             }
 
-            buildTypes {
-                release {
-                    isMinifyEnabled = false
-                    proguardFiles(
-                        getDefaultProguardFile("proguard-android-optimize.txt"),
-                        "proguard-rules.pro",
-                    )
-                }
-            }
-
-            buildFeatures {
-                compose = true
-            }
-
             packaging {
                 resources {
                     excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -79,12 +62,11 @@ fun Project.configureAndroidModule() {
         }
     }
 
-    configureKotlin()
-}
-
-fun Project.configureKotlin() {
-    configure<KotlinAndroidProjectExtension> {
-        jvmToolchain(21)
+    // Robolectric: каждый тест-класс — в своей JVM. Иначе сандбоксы
+    // Robolectric внутри одной JVM гоняются за native runtime, и тест
+    // падает с UnsatisfiedLinkError (воспроизводится и без этих правок).
+    tasks.withType(Test::class.java).configureEach {
+        forkEvery = 1
     }
 }
 

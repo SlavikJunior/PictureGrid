@@ -1,17 +1,14 @@
 plugins {
-    alias(libs.plugins.android.library)
+    id("convention.android.library")
+}
+
+kotlin {
+    // INV-26: публичный API api-модуля объявлен явно.
+    explicitApi()
 }
 
 android {
     namespace = "com.example.picturegrid.feature.gallery.api"
-    compileSdk = 37
-    defaultConfig {
-        minSdk = 26
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
 }
 
 dependencies {
