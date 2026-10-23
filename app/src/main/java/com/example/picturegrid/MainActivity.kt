@@ -13,8 +13,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.example.picturegrid.core.designsystem.PictureGridTheme
 import com.example.picturegrid.core.navigation.PictureGridSceneStrategy
-import com.example.picturegrid.core.navigation.GalleryRoute
-import com.example.picturegrid.core.navigation.NavigationRouter
+import com.example.picturegrid.feature.gallery.api.navigation.GalleryRoute
 import com.example.picturegrid.feature.gallery.impl.galleryNavEntry
 import com.example.picturegrid.feature.viewer.impl.viewerNavEntry
 import org.koin.core.component.KoinComponent

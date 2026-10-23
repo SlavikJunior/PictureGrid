@@ -1,9 +1,19 @@
-package com.example.picturegrid.core.navigation
+package com.example.picturegrid
 
+import com.example.picturegrid.core.navigation.Router
+import com.example.picturegrid.core.navigation.ViewerSelection
+import com.example.picturegrid.feature.gallery.api.navigation.GalleryRoute
+import com.example.picturegrid.feature.viewer.api.navigation.ViewerRoute
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 
-class NavigationRouter(
+/**
+ * Реализация [Router] для back stack приложения.
+ *
+ * Живёт в composition root: только приложение знает о маршрутах обеих фич,
+ * поэтому `core:navigation` остаётся независимым от них (INV-03, INV-18).
+ */
+internal class NavigationRouter(
     private val backStack: NavBackStack<NavKey>,
 ) : Router {
 

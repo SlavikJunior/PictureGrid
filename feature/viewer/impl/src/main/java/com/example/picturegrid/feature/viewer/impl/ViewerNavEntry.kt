@@ -3,7 +3,7 @@ package com.example.picturegrid.feature.viewer.impl
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.example.picturegrid.core.navigation.BottomSheetSceneStrategy
-import com.example.picturegrid.core.navigation.ViewerRoute
+import com.example.picturegrid.feature.viewer.api.navigation.ViewerRoute
 import com.example.picturegrid.core.navigation.ViewerSelection
 import com.example.picturegrid.feature.viewer.impl.presentation.ui.ViewerScreen
 
