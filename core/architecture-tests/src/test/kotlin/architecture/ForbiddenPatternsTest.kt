@@ -18,6 +18,8 @@ class ForbiddenPatternsTest {
 
     @Test
     fun `no GlobalScope in production code`() {
+        Coverage.report("ForbiddenPatternsTest", "production-файлы", productionScope.files.size)
+
         productionScope.files.assertTrue { file ->
             !file.text.contains("GlobalScope")
         }

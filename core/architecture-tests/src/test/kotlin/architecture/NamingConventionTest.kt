@@ -16,6 +16,8 @@ class NamingConventionTest {
 
     @Test
     fun `use cases reside in domain layer`() {
+        Coverage.report("NamingConventionTest", "production-файлы", productionScope.files.size)
+
         productionScope.classes()
             .withNameEndingWith(Suffixes.USE_CASE)
             .assertTrue { it.resideInPackage(DOMAIN_PACKAGE) }
