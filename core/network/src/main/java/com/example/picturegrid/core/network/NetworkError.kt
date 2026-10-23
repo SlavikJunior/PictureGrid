@@ -23,17 +23,3 @@ fun NetworkError.isRetryable(): Boolean = when (this) {
     is NetworkError.Http -> code == 408 || code == 429 || code in 500..599
     is NetworkError.TooLarge -> false
 }
-
-/**
- * Текст ошибки для пользователя.
- *
- * Формулировки единые для всех экранов: интерфейс приложения русскоязычный,
- * поэтому английские сообщения об ошибках выбивались из общего стиля.
- */
-fun NetworkError.toUserMessage(): String = when (this) {
-    NetworkError.Io -> "Ошибка сети"
-    NetworkError.Timeout -> "Тайм-аут сети"
-    NetworkError.EmptyBody -> "Пустой ответ сервера"
-    is NetworkError.Http -> "HTTP-ошибка $code"
-    is NetworkError.TooLarge -> "Ответ слишком большой (предел $limitBytes байт)"
-}
