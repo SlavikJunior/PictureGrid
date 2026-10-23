@@ -6,7 +6,10 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.core.rx.Observer
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
+import com.example.picturegrid.core.images.ImageLoadError
+import com.example.picturegrid.core.images.ImageLoadResult
 import com.example.picturegrid.core.images.OriginalImageLoader
+import com.example.picturegrid.feature.viewer.api.domain.ViewerError
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,7 +34,7 @@ internal interface ViewerStore : Store<ViewerStore.Intent, ViewerStore.State, No
         val index: Int,
         val isLoading: Boolean = true,
         val file: File? = null,
-        val error: String? = null,
+        val error: ViewerError? = null,
         val zoom: Zoom = Zoom(),
         val isFullscreen: Boolean = false,
     ) {
@@ -132,7 +135,7 @@ internal class ViewerStoreFactory(
     private sealed interface Msg {
         data class Loading(val index: Int) : Msg
         data class Loaded(val index: Int, val file: File) : Msg
-        data class Failed(val index: Int, val message: String) : Msg
+        data class Failed(val index: Int, val error: ViewerError) : Msg
         data class Zoomed(val zoom: ViewerStore.Zoom) : Msg
         data class FullscreenChanged(val isFullscreen: Boolean) : Msg
         data class Selected(val index: Int) : Msg
@@ -154,7 +157,7 @@ internal class ViewerStoreFactory(
             is Msg.Failed -> if (msg.index != index) {
                 this
             } else {
-                copy(isLoading = false, error = msg.message)
+                copy(isLoading = false, error = msg.error)
             }
             is Msg.Zoomed -> copy(zoom = msg.zoom)
             is Msg.FullscreenChanged -> copy(isFullscreen = msg.isFullscreen)
@@ -211,14 +214,23 @@ internal class ViewerStoreFactory(
             val url = state().urls.getOrNull(index) ?: return
             scope.launch {
                 dispatch(Msg.Loading(index))
-                val result = withContext(ioDispatcher) { loader.load(url) }
-                val file = result.getOrNull()
-                if (file != null) {
-                    dispatch(Msg.Loaded(index, file))
-                } else {
-                    dispatch(Msg.Failed(index, result.exceptionOrNull()?.message ?: "Load failed"))
+                when (val result = withContext(ioDispatcher) { loader.load(url) }) {
+                    is ImageLoadResult.Success -> dispatch(Msg.Loaded(index, result.file))
+                    is ImageLoadResult.Failure -> dispatch(Msg.Failed(index, result.error.toViewerError()))
                 }
             }
         }
     }
+}
+
+/**
+ * Переводит причину отказа загрузки в контракт экрана просмотра.
+ *
+ * Текст ошибки здесь не формируется: его выбирает UI (INV-14).
+ */
+private fun ImageLoadError.toViewerError(): ViewerError = when (this) {
+    is ImageLoadError.Network -> ViewerError.Network
+    ImageLoadError.NotAnImage -> ViewerError.NotAnImage
+    ImageLoadError.Corrupted -> ViewerError.Corrupted
+    ImageLoadError.Storage -> ViewerError.Storage
 }

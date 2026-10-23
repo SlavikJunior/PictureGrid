@@ -45,8 +45,8 @@ class OriginalImageLoaderTest {
         val client = FakeBytesClient(NetworkResult.Success(BinaryResponse(validPng, "image/png")))
         val l = loader(client)
         val result = l.load("https://example.com/img.png")
-        assertTrue(result.isSuccess)
-        val file = result.getOrNull()!!
+        assertTrue(result is ImageLoadResult.Success)
+        val file = (result as ImageLoadResult.Success).file
         assertTrue(file.exists())
         assertEquals(validPng.size, file.readBytes().size)
     }
@@ -55,7 +55,7 @@ class OriginalImageLoaderTest {
     fun `http error returns failure`() = runTest(testDispatcher) {
         val client = FakeBytesClient(NetworkResult.Failure(NetworkError.Http(404)))
         val result = loader(client).load("https://example.com/img.png")
-        assertTrue(result.isFailure)
+        assertTrue(result is ImageLoadResult.Failure)
     }
 
     @Test
@@ -64,7 +64,7 @@ class OriginalImageLoaderTest {
         val storage = storage()
         val l = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         val result = l.load("https://example.com/img.png")
-        assertTrue(result.isFailure)
+        assertTrue(result is ImageLoadResult.Failure)
         assertNull(storage.cachedFile("https://example.com/img.png"))
     }
 
@@ -74,7 +74,7 @@ class OriginalImageLoaderTest {
         val storage = storage()
         val l = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         val result = l.load("https://example.com/img.png")
-        assertTrue(result.isFailure)
+        assertTrue(result is ImageLoadResult.Failure)
         assertNull(storage.cachedFile("https://example.com/img.png"))
     }
 
@@ -84,9 +84,9 @@ class OriginalImageLoaderTest {
         val storage = storage()
         val l = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         val result = l.load("https://example.com/img.png")
-        assertTrue(result.isSuccess)
+        assertTrue(result is ImageLoadResult.Success)
         // Оригинал сохраняется без изменений.
-        assertTrue(validPng.contentEquals(result.getOrNull()!!.readBytes()))
+        assertTrue(validPng.contentEquals((result as ImageLoadResult.Success).file.readBytes()))
     }
 
     @Test
@@ -99,7 +99,7 @@ class OriginalImageLoaderTest {
         val counting = CountingBytesClient(client)
         val l2 = OriginalImageLoader(counting, storage, testDispatcher, imageChecker)
         val result = l2.load("https://example.com/img.png")
-        assertTrue(result.isSuccess)
+        assertTrue(result is ImageLoadResult.Success)
         assertEquals(0, counting.calls)
     }
 
@@ -111,8 +111,8 @@ class OriginalImageLoaderTest {
         val client1 = FakeBytesClient(NetworkResult.Success(BinaryResponse(validPng, "image/png")))
         val loader1 = OriginalImageLoader(client1, storage1, testDispatcher, imageChecker)
         val firstResult = loader1.load(url)
-        assertTrue(firstResult.isSuccess)
-        val storedFile = firstResult.getOrNull()!!
+        assertTrue(firstResult is ImageLoadResult.Success)
+        val storedFile = (firstResult as ImageLoadResult.Success).file
 
         val counting = CountingBytesClient(
             FakeBytesClient(NetworkResult.Failure(NetworkError.Io)),
@@ -121,17 +121,17 @@ class OriginalImageLoaderTest {
         val loader2 = OriginalImageLoader(counting, storage2, testDispatcher, imageChecker)
         val secondResult = loader2.load(url)
 
-        assertTrue(secondResult.isSuccess)
+        assertTrue(secondResult is ImageLoadResult.Success)
         assertEquals(0, counting.calls)
-        assertEquals(storedFile.absolutePath, secondResult.getOrNull()!!.absolutePath)
-        assertTrue(secondResult.getOrNull()!!.exists())
+        assertEquals(storedFile.absolutePath, (secondResult as ImageLoadResult.Success).file.absolutePath)
+        assertTrue((secondResult as ImageLoadResult.Success).file.exists())
     }
 
     @Test
     fun `content type text html is rejected`() = runTest(testDispatcher) {
         val client = FakeBytesClient(NetworkResult.Success(BinaryResponse(validPng, "text/html")))
         val result = loader(client).load("https://example.com/img.png")
-        assertTrue(result.isFailure)
+        assertTrue(result is ImageLoadResult.Failure)
     }
 
     @Test
@@ -147,9 +147,9 @@ class OriginalImageLoaderTest {
         val l = OriginalImageLoader(counting, storage, testDispatcher, imageChecker)
         val result = l.load(url)
 
-        assertTrue(result.isSuccess)
+        assertTrue(result is ImageLoadResult.Success)
         assertEquals("повреждённый оригинал должен быть загружен заново", 1, counting.calls)
-        assertTrue(validPng.contentEquals(result.getOrNull()!!.readBytes()))
+        assertTrue(validPng.contentEquals((result as ImageLoadResult.Success).file.readBytes()))
     }
 
     @Test
@@ -164,7 +164,7 @@ class OriginalImageLoaderTest {
         val l = OriginalImageLoader(counting, storage, testDispatcher, imageChecker)
         val result = l.load(url)
 
-        assertTrue(result.isSuccess)
+        assertTrue(result is ImageLoadResult.Success)
         assertEquals("обрезанный оригинал должен быть загружен заново", 1, counting.calls)
     }
 

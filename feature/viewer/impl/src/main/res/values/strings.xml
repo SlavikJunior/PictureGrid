@@ -3,4 +3,8 @@
     <string name="viewer_retry">Повторить</string>
     <string name="viewer_share">Поделиться</string>
     <string name="viewer_open_in_browser">В браузере</string>
+    <string name="viewer_error_network">Не удалось загрузить изображение</string>
+    <string name="viewer_error_not_image">По ссылке не изображение</string>
+    <string name="viewer_error_corrupted">Изображение повреждено</string>
+    <string name="viewer_error_storage">Не удалось сохранить изображение</string>
 </resources>

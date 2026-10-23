@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
+import com.example.picturegrid.feature.viewer.api.domain.ViewerError
 import com.example.picturegrid.feature.viewer.impl.R
 import com.example.picturegrid.feature.viewer.impl.presentation.state.ViewerStore
 
@@ -37,13 +38,17 @@ internal fun ViewerLoadingContent(modifier: Modifier = Modifier) {
 /** Оригинал не загрузился: сообщение и действие «Повторить». */
 @Composable
 internal fun ViewerErrorContent(
-    message: String,
+    error: ViewerError,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(message, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
+            Text(
+                text = ViewerErrorMessage(error),
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.error,
+            )
             Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) {
                 Text(stringResource(R.string.viewer_retry))
             }
@@ -73,7 +78,7 @@ private fun ViewerLoadingContentPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun ViewerErrorContentPreview() {
-    ViewerErrorContent(message = "Ошибка загрузки", onRetry = {})
+    ViewerErrorContent(error = ViewerError.Network, onRetry = {})
 }
 
 @Preview(showBackground = true)
@@ -84,4 +89,19 @@ private fun ViewerSuccessContentPreview() {
         imageLoader = ImageLoader.Builder(LocalContext.current).build(),
         onIntent = {},
     )
+}
+
+/**
+ * Текст ошибки для пользователя.
+ *
+ * Строки берутся только из ресурсов: store не знает, как ошибка называется
+ * на экране (INV-14, INV-20). Имя в PascalCase — требование
+ * ComposeConventionTest к композируемым функциям.
+ */
+@Composable
+internal fun ViewerErrorMessage(error: ViewerError): String = when (error) {
+    ViewerError.Network -> stringResource(R.string.viewer_error_network)
+    ViewerError.NotAnImage -> stringResource(R.string.viewer_error_not_image)
+    ViewerError.Corrupted -> stringResource(R.string.viewer_error_corrupted)
+    ViewerError.Storage -> stringResource(R.string.viewer_error_storage)
 }

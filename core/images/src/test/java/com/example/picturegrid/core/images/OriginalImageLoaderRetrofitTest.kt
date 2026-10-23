@@ -49,8 +49,8 @@ class OriginalImageLoaderRetrofitTest {
         val loader = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         val url = server.url("/img.png").toString()
         val result = loader.load(url)
-        assertTrue(result.isSuccess)
-        val file = result.getOrNull()!!
+        assertTrue(result is ImageLoadResult.Success)
+        val file = (result as ImageLoadResult.Success).file
         assertTrue(file.exists())
         assertTrue(validPng.contentEquals(file.readBytes()))
     }
@@ -63,7 +63,7 @@ class OriginalImageLoaderRetrofitTest {
         val loader = OriginalImageLoader(client, storage, testDispatcher, imageChecker)
         val url = server.url("/missing.png").toString()
         val result = loader.load(url)
-        assertTrue(result.isFailure)
+        assertTrue(result is ImageLoadResult.Failure)
         org.junit.Assert.assertNull(storage.cachedFile(url))
     }
 }

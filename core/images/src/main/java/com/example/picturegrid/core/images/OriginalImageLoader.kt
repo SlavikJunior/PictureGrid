@@ -3,13 +3,11 @@ package com.example.picturegrid.core.images
 import com.example.picturegrid.core.network.BinaryResponse
 import com.example.picturegrid.core.network.NetworkClient
 import com.example.picturegrid.core.network.NetworkResult
-import com.example.picturegrid.core.network.toUserMessage
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -24,8 +22,8 @@ import java.util.concurrent.ConcurrentHashMap
  * - Содержимое проверяется как изображение ([ImageContentChecker]) до
  *   сохранения: размеры читаются из заголовка, полноразмерный bitmap
  *   не декодируется.
- * - Ошибки сети/ФС и повреждённые данные возвращаются как [Result.failure],
- *   исключение не пробрасывается.
+ * - Ошибки сети/ФС и повреждённые данные возвращаются как
+ *   [ImageLoadResult.Failure] с причиной; исключение не пробрасывается.
  */
 class OriginalImageLoader(
     private val networkClient: NetworkClient,
@@ -37,12 +35,12 @@ class OriginalImageLoader(
 
     private val locks = ConcurrentHashMap<String, Mutex>()
 
-    suspend fun load(url: String): Result<File> = withContext(ioDispatcher) {
+    suspend fun load(url: String): ImageLoadResult = withContext(ioDispatcher) {
         val lock = locks.getOrPut(url) { Mutex() }
         lock.withLock {
             storage.cachedFile(url)?.let { cached ->
                 if (classifier.isImageFile(cached)) {
-                    return@withLock Result.success(cached)
+                    return@withLock ImageLoadResult.Success(cached)
                 }
                 // Сохранённый файл повреждён: он не показывается пользователю,
                 // удаляется и загружается заново.
@@ -53,18 +51,20 @@ class OriginalImageLoader(
                 is NetworkResult.Success -> {
                     val response: BinaryResponse = result.data
                     if (classifier.isNotImageContentType(response.contentType)) {
-                        // Текст ошибки не содержит значения ответа сервера:
-                        // причина не нужна пользователю и не должна попадать
-                        // в тексты ошибок приложения.
-                        return@withLock Result.failure(IllegalArgumentException("Not an image"))
+                        // Значение ответа сервера в причину не попадает:
+                        // пользователю нужен класс проблемы, а не тело ответа.
+                        return@withLock ImageLoadResult.Failure(ImageLoadError.NotAnImage)
                     }
                     if (!imageChecker.isImage(response.bytes)) {
-                        return@withLock Result.failure(IllegalArgumentException("Invalid image data"))
+                        return@withLock ImageLoadResult.Failure(ImageLoadError.Corrupted)
                     }
-                    storage.store(url, response.bytes)
+                    storage.store(url, response.bytes).fold(
+                        onSuccess = { file -> ImageLoadResult.Success(file) },
+                        onFailure = { ImageLoadResult.Failure(ImageLoadError.Storage) },
+                    )
                 }
                 is NetworkResult.Failure -> {
-                    Result.failure(Exception(result.error.toUserMessage()))
+                    ImageLoadResult.Failure(ImageLoadError.Network(result.error))
                 }
             }
         }

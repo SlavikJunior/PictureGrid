@@ -1,15 +1,10 @@
 package com.example.picturegrid.feature.viewer.impl.presentation.ui
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,12 +13,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.ImageLoader
-import com.example.picturegrid.feature.viewer.impl.R
 import com.example.picturegrid.feature.viewer.impl.presentation.state.ViewerStore
 
 /**
@@ -95,14 +86,12 @@ private fun CurrentImage(
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         when {
             state.isLoading && state.file == null -> CircularProgressIndicator()
-            state.error != null && state.file == null -> {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.error, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
-                    Button(onClick = { onIntent(ViewerStore.Intent.Retry) }, modifier = Modifier.padding(top = 12.dp)) {
-                        Text(stringResource(R.string.viewer_retry))
-                    }
-                }
-            }
+            // Ошибка рисуется тем же состоянием, что и в ViewerContent:
+            // дублировать вёрстку и тексты нельзя (INV-28, INV-14).
+            state.error != null && state.file == null -> ViewerErrorContent(
+                error = state.error,
+                onRetry = { onIntent(ViewerStore.Intent.Retry) },
+            )
             state.file != null -> ZoomableImage(
                 file = state.file,
                 zoom = state.zoom,
