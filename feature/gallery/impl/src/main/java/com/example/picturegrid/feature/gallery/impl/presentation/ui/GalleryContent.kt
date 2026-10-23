@@ -8,13 +8,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import coil3.ImageLoader
 import com.example.picturegrid.core.designsystem.PictureGridTopAppBar
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason
@@ -32,15 +29,10 @@ import com.example.picturegrid.feature.gallery.impl.presentation.state.GallerySt
 @Composable
 internal fun GalleryContent(
     modifier: Modifier = Modifier,
-    imageLoader: ImageLoader? = null,
     state: GalleryStore.State,
     onRetry: () -> Unit,
     onImageClick: (GalleryItem.Image) -> Unit,
 ) {
-    val context = LocalContext.current
-    val actualImageLoader = imageLoader ?: remember {
-        ImageLoader.Builder(context).build()
-    }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     // Фон рисует Scaffold, а не окно: так фон галереи совпадает с
     // MaterialTheme в светлой и тёмной темах.
@@ -74,10 +66,7 @@ internal fun GalleryContent(
                 // состояние с возможностью обновить список.
                 state.items.isEmpty() -> GalleryEmptyContent(onRefresh = onRetry)
                 else -> GallerySuccessContent(
-                    items = state.items,
-                    isRefreshing = state.isRefreshing,
-                    refreshError = state.refreshError,
-                    imageLoader = actualImageLoader,
+                    state = state,
                     onImageClick = onImageClick,
                 )
             }
@@ -89,7 +78,6 @@ internal fun GalleryContent(
 @Composable
 private fun GalleryContentPreview() {
     GalleryContent(
-        imageLoader = ImageLoader.Builder(LocalContext.current).build(),
         state = GalleryStore.State(
             isLoading = false,
             items = listOf(

@@ -7,11 +7,14 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import coil3.ImageLoader
 import com.example.picturegrid.core.designsystem.PictureGridTheme
+import com.example.picturegrid.core.images.LocalImageLoader
 import com.example.picturegrid.core.navigation.PictureGridSceneStrategy
 import com.example.picturegrid.feature.gallery.api.navigation.GalleryRoute
 import com.example.picturegrid.feature.gallery.impl.galleryNavEntry
@@ -22,30 +25,35 @@ import org.koin.core.component.inject
 class MainActivity : ComponentActivity(), KoinComponent {
 
     private val shareIntents: ShareIntents by inject()
+    private val imageLoader: ImageLoader by inject()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             PictureGridTheme {
-                val backStack = rememberNavBackStack(GalleryRoute)
-                val router = remember(backStack) { NavigationRouter(backStack) }
-                NavDisplay(
-                    backStack = backStack,
-                    onBack = { backStack.removeLastOrNull() },
-                    sceneStrategies = listOf(PictureGridSceneStrategy()),
-                    entryProvider = entryProvider {
-                        galleryNavEntry(
-                            onImageClick = { selection ->
-                                router.navigateToViewer(selection.urls, selection.index)
-                            },
-                        )
-                        viewerNavEntry(
-                            selectionProvider = router::viewerSelection,
-                            onShare = ::startShare,
-                            onOpenInBrowser = ::startOpenInBrowser,
-                        )
-                    },
-                )
+                // Единственный ImageLoader приложения: фичи получают его из
+                // CompositionLocal, а не тащат через параметры Composable.
+                CompositionLocalProvider(LocalImageLoader provides imageLoader) {
+                    val backStack = rememberNavBackStack(GalleryRoute)
+                    val router = remember(backStack) { NavigationRouter(backStack) }
+                    NavDisplay(
+                        backStack = backStack,
+                        onBack = { backStack.removeLastOrNull() },
+                        sceneStrategies = listOf(PictureGridSceneStrategy()),
+                        entryProvider = entryProvider {
+                            galleryNavEntry(
+                                onImageClick = { selection ->
+                                    router.navigateToViewer(selection.urls, selection.index)
+                                },
+                            )
+                            viewerNavEntry(
+                                selectionProvider = router::viewerSelection,
+                                onShare = ::startShare,
+                                onOpenInBrowser = ::startOpenInBrowser,
+                            )
+                        },
+                    )
+                }
             }
         }
     }

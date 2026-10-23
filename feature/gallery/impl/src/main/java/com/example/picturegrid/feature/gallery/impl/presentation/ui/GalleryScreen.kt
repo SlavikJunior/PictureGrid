@@ -11,11 +11,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arkivanov.mvikotlin.core.store.Store
-import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
 import com.example.picturegrid.feature.gallery.api.ImageSelection
 import com.example.picturegrid.feature.gallery.api.NetworkMonitor
 import kotlinx.coroutines.launch
-import coil3.ImageLoader
 import org.koin.compose.koinInject
 import com.example.picturegrid.feature.gallery.impl.presentation.state.GalleryStore
 import com.example.picturegrid.feature.gallery.impl.presentation.state.GalleryStoreFactory
@@ -23,10 +21,10 @@ import com.example.picturegrid.feature.gallery.impl.presentation.state.GallerySt
 @Composable
 internal fun GalleryScreen(
     modifier: Modifier = Modifier,
-    imageLoader: ImageLoader = koinInject(),
-    repository: GalleryRepository = koinInject(),
-    networkMonitor: NetworkMonitor = koinInject(),
+    // Зависимости приходят из DI, но остаются параметрами: тест подменяет их
+    // без глобального Koin, а сигнатура отражает только вход экрана.
     storeFactory: GalleryStoreFactory = koinInject(),
+    networkMonitor: NetworkMonitor = koinInject(),
     onImageClick: (ImageSelection) -> Unit = {},
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -64,7 +62,6 @@ internal fun GalleryScreen(
         state = state,
         onRetry = { store.accept(GalleryStore.Intent.Retry) },
         onImageClick = { item -> onImageClick(com.example.picturegrid.feature.gallery.api.selection(state.items, item.id)) },
-        imageLoader = imageLoader,
         modifier = modifier,
     )
 }

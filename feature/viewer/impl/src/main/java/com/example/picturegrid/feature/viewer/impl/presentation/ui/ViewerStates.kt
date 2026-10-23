@@ -9,14 +9,16 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
+import coil3.compose.LocalPlatformContext
+import com.example.picturegrid.core.images.LocalImageLoader
 import com.example.picturegrid.feature.viewer.api.domain.ViewerError
 import com.example.picturegrid.feature.viewer.impl.R
 import com.example.picturegrid.feature.viewer.impl.presentation.state.ViewerStore
@@ -60,12 +62,11 @@ internal fun ViewerErrorContent(
 @Composable
 internal fun ViewerSuccessContent(
     state: ViewerStore.State,
-    imageLoader: ImageLoader,
     onIntent: (ViewerStore.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        ViewerPager(state = state, imageLoader = imageLoader, onIntent = onIntent)
+        ViewerPager(state = state, onIntent = onIntent)
     }
 }
 
@@ -84,11 +85,17 @@ private fun ViewerErrorContentPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun ViewerSuccessContentPreview() {
-    ViewerSuccessContent(
-        state = ViewerStore.State(urls = listOf("https://example.com/image.png"), index = 0),
-        imageLoader = ImageLoader.Builder(LocalContext.current).build(),
-        onIntent = {},
-    )
+    CompositionLocalProvider(
+        LocalImageLoader provides ImageLoader.Builder(LocalPlatformContext.current).build(),
+    ) {
+        ViewerSuccessContent(
+            state = ViewerStore.State(
+                urls = listOf("https://example.com/image.png"),
+                index = 0,
+            ),
+            onIntent = {},
+        )
+    }
 }
 
 /**

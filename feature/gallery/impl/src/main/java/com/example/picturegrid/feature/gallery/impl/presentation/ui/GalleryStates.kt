@@ -18,15 +18,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil3.ImageLoader
 import com.example.picturegrid.feature.gallery.api.domain.GalleryError
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.NetworkFailure
+import com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason
 import com.example.picturegrid.feature.gallery.impl.R
 import com.example.picturegrid.feature.gallery.impl.presentation.state.GalleryStore
 
@@ -100,10 +99,7 @@ internal fun GalleryEmptyContent(
 /** Сетка элементов и баннер ошибки фонового обновления. */
 @Composable
 internal fun GallerySuccessContent(
-    items: List<GalleryItem>,
-    isRefreshing: Boolean,
-    refreshError: GalleryError?,
-    imageLoader: ImageLoader,
+    state: GalleryStore.State,
     onImageClick: (GalleryItem.Image) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -116,7 +112,7 @@ internal fun GallerySuccessContent(
             contentPadding = PaddingValues(8.dp),
         ) {
             items(
-                items = items,
+                items = state.items,
                 key = { it.id },
                 contentType = { item ->
                     when (item) {
@@ -127,13 +123,14 @@ internal fun GallerySuccessContent(
             ) { item ->
                 GalleryCell(
                     item = item,
-                    imageLoader = imageLoader,
-                    isRefreshing = isRefreshing,
                     onImageClick = onImageClick,
                 )
             }
         }
-        if (refreshError != null) {
+        // Ссылка на параметр стабилизируется локальной переменной: иначе
+        // внутри лямбды умное приведение к ненулевому типу недоступно.
+        val bannerError = state.refreshError
+        if (bannerError != null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 // Фон обязателен: без него сообщение ложилось прямо на
                 // превью и не читалось.
@@ -146,7 +143,7 @@ internal fun GallerySuccessContent(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = GalleryErrorMessage(refreshError),
+                        text = GalleryErrorMessage(bannerError),
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(8.dp),
@@ -192,13 +189,12 @@ private fun GalleryEmptyContentPreview() {
 @Composable
 private fun GallerySuccessContentPreview() {
     GallerySuccessContent(
-        items = listOf(
-            GalleryItem.Image("image", "https://example.com/image.png"),
-            GalleryItem.Placeholder("placeholder", "text", com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason.NotUrl),
+        state = GalleryStore.State(
+            items = listOf(
+                GalleryItem.Image("image", "https://example.com/image.png"),
+                GalleryItem.Placeholder("placeholder", "text", PlaceholderReason.NotUrl),
+            ),
         ),
-        isRefreshing = false,
-        refreshError = null,
-        imageLoader = ImageLoader.Builder(LocalContext.current).build(),
         onImageClick = {},
     )
 }

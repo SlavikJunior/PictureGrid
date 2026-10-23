@@ -2,9 +2,10 @@ package com.example.picturegrid.feature.gallery
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
-import coil3.ImageLoader
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.onNodeWithText
+import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import com.example.picturegrid.feature.gallery.api.NetworkMonitor
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
@@ -18,7 +19,10 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.Config
+import com.example.picturegrid.core.images.LocalImageLoader
+import com.example.picturegrid.feature.gallery.impl.presentation.state.GalleryStoreFactory
 import com.example.picturegrid.feature.gallery.impl.presentation.ui.GalleryScreen
+import coil3.ImageLoader
 
 /**
  * Проверка реакции галереи на восстановление сети.
@@ -42,15 +46,16 @@ class GalleryNetworkRecoveryTest {
         val monitor = FakeNetworkMonitor()
         val context = org.robolectric.RuntimeEnvironment.getApplication()
         composeRule.setContent {
-            GalleryScreen(
-                repository = repository,
-                networkMonitor = monitor,
-                storeFactory = com.example.picturegrid.feature.gallery.impl.presentation.state.GalleryStoreFactory(
-                    storeFactory = DefaultStoreFactory(),
-                    repository = repository,
-                ),
-                imageLoader = ImageLoader.Builder(context).build(),
-            )
+            val imageLoader = remember { ImageLoader.Builder(context).build() }
+            CompositionLocalProvider(LocalImageLoader provides imageLoader) {
+                GalleryScreen(
+                    storeFactory = GalleryStoreFactory(
+                        storeFactory = DefaultStoreFactory(),
+                        repository = repository,
+                    ),
+                    networkMonitor = monitor,
+                )
+            }
         }
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Не ссылка").assertIsDisplayed()

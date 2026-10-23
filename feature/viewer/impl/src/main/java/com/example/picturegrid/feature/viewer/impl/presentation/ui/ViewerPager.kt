@@ -14,7 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
-import coil3.ImageLoader
+import com.example.picturegrid.core.images.LocalImageLoader
 import com.example.picturegrid.feature.viewer.impl.presentation.state.ViewerStore
 
 /**
@@ -26,10 +26,10 @@ import com.example.picturegrid.feature.viewer.impl.presentation.state.ViewerStor
 @Composable
 internal fun ViewerPager(
     state: ViewerStore.State,
-    imageLoader: ImageLoader,
     onIntent: (ViewerStore.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val imageLoader = LocalImageLoader.current
     if (state.urls.isEmpty()) return
     val pagerState = rememberPagerState(initialPage = state.index) { state.urls.size }
     val currentIntent by rememberUpdatedState(onIntent)
@@ -59,7 +59,7 @@ internal fun ViewerPager(
         key = { page -> state.urls[page] },
     ) { page ->
         if (page == state.index) {
-            CurrentImage(state = state, imageLoader = imageLoader, onIntent = onIntent)
+            CurrentImage(state = state, onIntent = onIntent)
         } else {
             AsyncImage(
                 model = state.urls[page],
@@ -79,7 +79,6 @@ internal fun ViewerPager(
 @Composable
 private fun CurrentImage(
     state: ViewerStore.State,
-    imageLoader: ImageLoader,
     onIntent: (ViewerStore.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -96,7 +95,6 @@ private fun CurrentImage(
                 file = state.file,
                 zoom = state.zoom,
                 onIntent = onIntent,
-                imageLoader = imageLoader,
             )
         }
     }

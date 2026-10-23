@@ -28,7 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.ImageLoader
+import com.example.picturegrid.core.images.LocalImageLoader
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason
 import com.example.picturegrid.feature.gallery.impl.R
@@ -39,8 +39,6 @@ import com.example.picturegrid.feature.gallery.impl.R
 @Composable
 internal fun GalleryCell(
     item: GalleryItem,
-    imageLoader: ImageLoader,
-    isRefreshing: Boolean,
     onImageClick: (GalleryItem.Image) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -51,7 +49,7 @@ internal fun GalleryCell(
         contentAlignment = Alignment.Center,
     ) {
         when (item) {
-            is GalleryItem.Image -> ImageCell(item = item, imageLoader = imageLoader, onImageClick = onImageClick)
+            is GalleryItem.Image -> ImageCell(item = item, onImageClick = onImageClick)
             is GalleryItem.Placeholder -> PlaceholderCell(reason = item.reason)
         }
     }
@@ -60,10 +58,10 @@ internal fun GalleryCell(
 @Composable
 private fun ImageCell(
     item: GalleryItem.Image,
-    imageLoader: ImageLoader,
     onImageClick: (GalleryItem.Image) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val imageLoader = LocalImageLoader.current
     var retryKey by remember { mutableIntStateOf(0) }
     var failure by remember { mutableStateOf<ImageCellFailure?>(null) }
     Box(

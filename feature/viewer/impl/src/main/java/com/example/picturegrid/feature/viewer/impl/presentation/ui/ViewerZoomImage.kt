@@ -21,7 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
-import coil3.ImageLoader
+import com.example.picturegrid.core.images.LocalImageLoader
 import com.example.picturegrid.feature.viewer.impl.presentation.state.ViewerStore
 import java.io.File
 
@@ -34,11 +34,11 @@ import java.io.File
 @Composable
 internal fun ZoomableImage(
     file: File,
-    imageLoader: ImageLoader,
     zoom: ViewerStore.Zoom,
     onIntent: (ViewerStore.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val imageLoader = LocalImageLoader.current
     var containerWidth by remember { mutableStateOf(0f) }
     var containerHeight by remember { mutableStateOf(0f) }
     var imageWidth by remember { mutableStateOf(0f) }

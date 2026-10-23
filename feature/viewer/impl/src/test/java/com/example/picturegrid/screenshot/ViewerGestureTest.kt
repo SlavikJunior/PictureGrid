@@ -1,6 +1,8 @@
 package com.example.picturegrid.screenshot
 
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -9,7 +11,10 @@ import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.pinch
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
+import coil3.ImageLoader
+import coil3.compose.LocalPlatformContext
 import com.example.picturegrid.core.designsystem.PictureGridTheme
+import com.example.picturegrid.core.images.LocalImageLoader
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -41,12 +46,23 @@ class ViewerGestureTest {
     private fun setContent(urls: List<String> = listOf("u")) {
         val file = File.createTempFile("orig", ".png")
         composeRule.setContent {
+            val platformContext = LocalPlatformContext.current
+            val imageLoader = remember(platformContext) {
+                ImageLoader.Builder(platformContext).build()
+            }
             PictureGridTheme(darkTheme = false, dynamicColor = false) {
-                Surface {
-                    ViewerContent(
-                        state = ViewerStore.State(urls = urls, index = 0, file = file, isLoading = false),
-                        onIntent = { intents += it },
-                    )
+                CompositionLocalProvider(LocalImageLoader provides imageLoader) {
+                    Surface {
+                        ViewerContent(
+                            state = ViewerStore.State(
+                                urls = urls,
+                                index = 0,
+                                file = file,
+                                isLoading = false,
+                            ),
+                            onIntent = { intents += it },
+                        )
+                    }
                 }
             }
         }

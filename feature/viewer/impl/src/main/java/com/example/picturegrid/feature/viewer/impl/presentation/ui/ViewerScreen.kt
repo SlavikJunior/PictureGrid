@@ -10,7 +10,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.picturegrid.core.navigation.LocalBottomSheetController
-import coil3.ImageLoader
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 import com.example.picturegrid.feature.viewer.impl.presentation.state.ViewerStore
@@ -26,7 +25,6 @@ internal fun ViewerScreen(
     modifier: Modifier = Modifier,
     urls: List<String>,
     initialIndex: Int = 0,
-    imageLoader: ImageLoader = koinInject(),
     onShare: (String) -> Unit = {},
     onOpenInBrowser: (String) -> Unit = {},
 ) {
@@ -55,7 +53,6 @@ internal fun ViewerScreen(
     }
 
     ViewerContent(
-        imageLoader = imageLoader,
         state = state,
         onIntent = { store.accept(it) },
         onShare = onShare,

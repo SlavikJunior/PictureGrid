@@ -22,6 +22,9 @@ android {
 
 dependencies {
     implementation(project(":core:network"))
+    // LocalImageLoader публикует тип ProvidableCompositionLocal наружу.
+    implementation(platform(libs.androidx.compose.bom))
+    api(libs.compose.runtime)
     api(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.kotlinx.coroutines.core)

@@ -1,6 +1,7 @@
 package com.example.picturegrid.screenshot
 
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import coil3.ImageLoader
@@ -8,6 +9,7 @@ import coil3.Uri
 import coil3.fetch.Fetcher
 import coil3.fetch.FetchResult
 import com.example.picturegrid.core.designsystem.PictureGridTheme
+import com.example.picturegrid.core.images.LocalImageLoader
 import com.example.picturegrid.core.images.NotImageContentException
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason
@@ -78,13 +80,14 @@ class GalleryScreenshotTest {
     fun `gallery light`() {
         composeRule.setContent {
             PictureGridTheme(darkTheme = false, dynamicColor = false) {
-                Surface {
-                    GalleryContent(
-                        imageLoader = imageLoader,
-                        state = fakeState,
-                        onRetry = {},
-                        onImageClick = {},
-                    )
+                CompositionLocalProvider(LocalImageLoader provides imageLoader) {
+                    Surface {
+                        GalleryContent(
+                            state = fakeState,
+                            onRetry = {},
+                            onImageClick = {},
+                        )
+                    }
                 }
             }
         }
@@ -96,13 +99,14 @@ class GalleryScreenshotTest {
     fun `gallery dark`() {
         composeRule.setContent {
             PictureGridTheme(darkTheme = true, dynamicColor = false) {
-                Surface {
-                    GalleryContent(
-                        imageLoader = imageLoader,
-                        state = fakeState,
-                        onRetry = {},
-                        onImageClick = {},
-                    )
+                CompositionLocalProvider(LocalImageLoader provides imageLoader) {
+                    Surface {
+                        GalleryContent(
+                            state = fakeState,
+                            onRetry = {},
+                            onImageClick = {},
+                        )
+                    }
                 }
             }
         }
@@ -114,13 +118,14 @@ class GalleryScreenshotTest {
     fun `gallery loading`() {
         composeRule.setContent {
             PictureGridTheme(darkTheme = false, dynamicColor = false) {
-                Surface {
-                    GalleryContent(
-                        imageLoader = imageLoader,
-                        state = GalleryStore.State(isLoading = true),
-                        onRetry = {},
-                        onImageClick = {},
-                    )
+                CompositionLocalProvider(LocalImageLoader provides imageLoader) {
+                    Surface {
+                        GalleryContent(
+                            state = GalleryStore.State(isLoading = true),
+                            onRetry = {},
+                            onImageClick = {},
+                        )
+                    }
                 }
             }
         }
@@ -134,13 +139,14 @@ class GalleryScreenshotTest {
     fun `gallery empty list`() {
         composeRule.setContent {
             PictureGridTheme(darkTheme = false, dynamicColor = false) {
-                Surface {
-                    GalleryContent(
-                        imageLoader = imageLoader,
-                        state = GalleryStore.State(items = emptyList(), isLoading = false),
-                        onRetry = {},
-                        onImageClick = {},
-                    )
+                CompositionLocalProvider(LocalImageLoader provides imageLoader) {
+                    Surface {
+                        GalleryContent(
+                            state = GalleryStore.State(items = emptyList(), isLoading = false),
+                            onRetry = {},
+                            onImageClick = {},
+                        )
+                    }
                 }
             }
         }
