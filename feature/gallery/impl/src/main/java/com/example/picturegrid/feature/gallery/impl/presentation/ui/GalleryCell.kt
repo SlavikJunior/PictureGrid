@@ -20,10 +20,12 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -62,6 +64,8 @@ private fun ImageCell(
     modifier: Modifier = Modifier,
 ) {
     val imageLoader = LocalImageLoader.current
+    val context = LocalContext.current
+    val loadFailedMessage = stringResource(R.string.gallery_image_load_failed)
     var retryKey by remember { mutableIntStateOf(0) }
     var failure by remember { mutableStateOf<ImageCellFailure?>(null) }
     Box(
@@ -69,7 +73,20 @@ private fun ImageCell(
             .fillMaxSize()
             .clip(RoundedCornerShape(18.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .clickable { onImageClick(item) },
+            .clickable {
+                // Просмотр открывается только для загруженной картинки: иначе
+                // лист показал бы ошибку вместо изображения. Для временной
+                // ошибки объясняем её и оставляем активным только повтор.
+                when (failure) {
+                    null -> onImageClick(item)
+                    ImageCellFailure.LoadFailed -> Toast.makeText(
+                        context,
+                        loadFailedMessage,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    ImageCellFailure.NotImage -> Unit
+                }
+            },
     ) {
         key(retryKey) {
             AsyncImage(
