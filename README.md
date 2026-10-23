@@ -9,7 +9,7 @@
 [![AGP](https://img.shields.io/badge/AGP-9.4.1-3DDC84?logo=androidstudio&logoColor=white)](https://developer.android.com/build)
 [![Gradle](https://img.shields.io/badge/Gradle-9.6.0-02303A?logo=gradle&logoColor=white)](https://gradle.org)
 [![Android](https://img.shields.io/badge/Android-8.0%20%2B%20(API%2026--37)-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
-[![Tests](https://img.shields.io/badge/tests-172%20unit%20%2B%203%20instrumentation-4CAF50?logo=gradle&logoColor=white)](#проверки)
+[![Tests](https://img.shields.io/badge/tests-209%20unit%20%2B%203%20instrumentation-4CAF50?logo=gradle&logoColor=white)](#проверки)
 
 </div>
 
@@ -25,8 +25,8 @@
   </tr>
   <tr>
     <td align="center"><img src="assets/readme/dark-theme.webp" width="260" alt="Галерея в тёмной теме"><br><sub><b>Тёмная тема</b> — следует системной, Material You на API 29+</sub></td>
-    <td align="center"><img src="assets/readme/landscape.webp" width="260" alt="Ландшафтная ориентация: 7 колонок, подпись кнопки «Повторить» в одну строку"><br><sub><b>Ландшафт</b> — 3 → 7 колонок по ширине окна</sub></td>
-    <td align="center"><img src="assets/readme/offline.webp" width="260" alt="Офлайн: баннер «Сеть: Ошибка сети», сохранённый список и превью из кэша"><br><sub><b>Офлайн</b> — сохранённый список и кэш превью</sub></td>
+    <td align="center"><img src="assets/readme/landscape.webp" width="260" alt="Ландшафтная ориентация: 8 колонок, подпись кнопки «Повторить» в одну строку"><br><sub><b>Ландшафт</b> — 3 → 8 колонок по ширине окна</sub></td>
+    <td align="center"><img src="assets/readme/offline.webp" width="260" alt="Офлайн: баннер «Не удалось связаться с сервером», сохранённый список и превью из кэша"><br><sub><b>Офлайн</b> — сохранённый список и кэш превью</sub></td>
   </tr>
 </table>
 
@@ -39,7 +39,7 @@
 - **Автоматическая загрузка списка** URL при запуске — построчно, с сохранением исходного порядка.
 - **Дисковое кэширование списка** в приватном каталоге приложения: при недоступной сети используется ранее сохранённая копия.
 - **Адаптивная сетка** `GridCells.Adaptive(100.dp)` — число колонок считается по фактической ширине окна, а не по ориентации, поэтому корректно работает на планшетах, в multi-window и при повороте экрана.
-- **Три разных вида отказа** в ячейке: «Не ссылка» (строка не URL), «Не изображение» (URL отдаёт заведомо не-изображение) и «Повторить» (временная ошибка загрузки).
+- **Три разных вида отказа** в ячейке: «Не ссылка» (строка не URL), «Не изображение» (URL отдаёт заведомо не-изображение) и «Повторить» (временная ошибка загрузки). Ячейка с ошибкой не открывает просмотр: клик показывает сообщение об ошибке, активно только действие «Повторить».
 - **Просмотр оригинала в BottomSheet** — отдельная destination в back stack, системный Back закрывает лист и возвращает к галерее.
 - **Постоянное хранение оригиналов** в приватном каталоге: оригинал читается с диска при повторном открытии и после перезапуска приложения.
 - **Кэш превью** на Coil — отдельный от кэша оригиналов, с декодированием под размер ячейки.
@@ -108,6 +108,8 @@
 ## Важные технические решения
 
 - **Однонаправленный поток данных.** Экраны построены на MVIKotlin: `Intent → Executor → Message → Reducer → State → UI`. Состояние мутируется только через `_state.update { }`, UI остаётся stateless.
+- **Дизайн-система вместо локальных заголовков.** Верхняя панель — компонент `PictureGridTopAppBar` на Material3 `MediumTopAppBar`: заголовок с подзаголовком, слоты навигации и действий, сворачивание при прокрутке задаёт экран. Строки приходят из ресурсов, компонент не знает текстов.
+- **Один `ImageLoader` на приложение.** Загрузчик доступен UI через `LocalImageLoader` из `core:images` и провайдится один раз в `:app`: экраны не принимают его параметром, а второго экземпляра с отдельным кэшем не появляется.
 - **Навигация — Navigation 3.** Фичи не трогают внутренний back stack напрямую: есть тонкая Router-обёртка в `core:navigation`, а лист просмотра — отдельная destination со своей scene strategy.
 - **Feature-based модули с разделением `api` / `impl`.** `api` не знает о реализациях, `core` не импортирует фичи, composition root связывает контракты и реализации. Проверяется тестом Konsist и задачей `checkModuleDependencies`.
 - **Compile-time DI через Koin Compiler Plugin.** Общая инфраструктура объявлена в `:app`, графы галереи и просмотрщика — в `feature/*/impl`. Production-синглтоны и ручные fallback-фабрики удалены; зависимости передаются через Koin, а граф проверяется компилятором.
@@ -155,7 +157,6 @@
 ├── :feature:gallery:impl     Store, репозиторий, парсер, сетка, заглушки
 ├── :feature:viewer:api       контракт просмотра
 ├── :feature:viewer:impl      просмотрщик, зум, полный экран, пейджер
-├── :core:common              общие типы
 ├── :core:network             HTTP-клиент, NetworkError, лимиты ответа
 ├── :core:images              Coil ImageLoader, ImageStorage, проверка содержимого
 ├── :core:navigation          Router-обёртка над Navigation 3, BottomSheet strategy
@@ -291,8 +292,7 @@ Gradle, описывает другую сборку — другой дистр
 ```text
 app/                        composition root, Application, Activity, интенты
 core/
-  common/                   общие типы
-  designsystem/             темы и типографика
+  designsystem/             темы, типографика, верхняя панель
   images/                   Coil ImageLoader, ImageStorage, проверка содержимого
   navigation/               Router, BottomSheet strategy
   network/                  HTTP-клиент, NetworkError, лимиты
