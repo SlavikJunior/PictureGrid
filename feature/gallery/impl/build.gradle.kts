@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":core:network"))
     implementation(project(":core:navigation"))
     implementation(project(":core:images"))
+    implementation(project(":core:designsystem"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.mvikotlin)
     implementation(libs.mvikotlin.main)
@@ -38,7 +39,6 @@ dependencies {
 
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit)
-    testImplementation(project(":core:designsystem"))
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.compose.material3)

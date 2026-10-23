@@ -1,22 +1,21 @@
 package com.example.picturegrid.feature.gallery.impl.presentation.ui
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
+import com.example.picturegrid.core.designsystem.PictureGridTopAppBar
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.PlaceholderReason
 import com.example.picturegrid.feature.gallery.impl.R
@@ -29,6 +28,7 @@ import com.example.picturegrid.feature.gallery.impl.presentation.state.GallerySt
  * пустой список и сетка (INV-28). Каждое состояние можно показать в
  * превью отдельно — без DI и без сети.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun GalleryContent(
     modifier: Modifier = Modifier,
@@ -41,58 +41,47 @@ internal fun GalleryContent(
     val actualImageLoader = imageLoader ?: remember {
         ImageLoader.Builder(context).build()
     }
-    // Фон рисует Compose, а не окно: так фон галереи совпадает с
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    // Фон рисует Scaffold, а не окно: так фон галереи совпадает с
     // MaterialTheme в светлой и тёмной темах.
-    Surface(modifier = modifier, color = MaterialTheme.colorScheme.background) {
-        Column(Modifier.fillMaxSize()) {
-            GalleryHeader()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-            ) {
-                when {
-                    state.isLoading && state.items.isEmpty() -> GalleryLoadingContent()
-                    state.error != null && state.items.isEmpty() -> GalleryErrorContent(
-                        error = state.error,
-                        onRetry = onRetry,
-                    )
-                    // Список получен, но не содержит ни одной строки: пустая сетка
-                    // без объяснения выглядит как дефект, поэтому показываем явное
-                    // состояние с возможностью обновить список.
-                    state.items.isEmpty() -> GalleryEmptyContent(onRefresh = onRetry)
-                    else -> GallerySuccessContent(
-                        items = state.items,
-                        isRefreshing = state.isRefreshing,
-                        refreshError = state.refreshError,
-                        imageLoader = actualImageLoader,
-                        onImageClick = onImageClick,
-                    )
-                }
+    Scaffold(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            PictureGridTopAppBar(
+                title = stringResource(R.string.gallery_title),
+                subtitle = stringResource(R.string.gallery_subtitle),
+                scrollBehavior = scrollBehavior,
+            )
+        },
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                // Панель сворачивается по прокрутке сетки: связь передаётся
+                // снизу вверх, сама сетка о поведении не знает.
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
+        ) {
+            when {
+                state.isLoading && state.items.isEmpty() -> GalleryLoadingContent()
+                state.error != null && state.items.isEmpty() -> GalleryErrorContent(
+                    error = state.error,
+                    onRetry = onRetry,
+                )
+                // Список получен, но не содержит ни одной строки: пустая сетка
+                // без объяснения выглядит как дефект, поэтому показываем явное
+                // состояние с возможностью обновить список.
+                state.items.isEmpty() -> GalleryEmptyContent(onRefresh = onRetry)
+                else -> GallerySuccessContent(
+                    items = state.items,
+                    isRefreshing = state.isRefreshing,
+                    refreshError = state.refreshError,
+                    imageLoader = actualImageLoader,
+                    onImageClick = onImageClick,
+                )
             }
         }
-    }
-}
-
-@Composable
-private fun GalleryHeader(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 18.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.gallery_title),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Text(
-            text = stringResource(R.string.gallery_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 2.dp),
-        )
     }
 }
 
