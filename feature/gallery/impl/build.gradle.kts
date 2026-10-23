@@ -2,6 +2,14 @@ plugins {
     id("convention.android.library")
     id("convention.android.compose")
     id("convention.koin")
+    // Скриншот-тесты модуля записываются и проверяются своими задачами:
+    // без плагина captureRoboImage молча ничего не пишет.
+    alias(libs.plugins.roborazzi)
+}
+
+roborazzi {
+    // Отдельные output-каталоги по варианту: защита от гонки Gradle 9.
+    separateOutputDirs.set(true)
 }
 
 android {
