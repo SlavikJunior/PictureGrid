@@ -7,4 +7,10 @@
     <string name="gallery_not_url">Не ссылка</string>
     <string name="gallery_not_image">Не изображение</string>
     <string name="gallery_load_failed">Ошибка загрузки</string>
+    <string name="gallery_error_io">Не удалось связаться с сервером</string>
+    <string name="gallery_error_timeout">Сервер не ответил вовремя</string>
+    <string name="gallery_error_empty_body">Сервер вернул пустой ответ</string>
+    <string name="gallery_error_http">Сервер ответил ошибкой %1$d</string>
+    <string name="gallery_error_too_large">Ответ сервера слишком большой</string>
+    <string name="gallery_error_storage">Не удалось сохранить список</string>
 </resources>

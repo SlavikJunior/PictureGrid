@@ -6,11 +6,12 @@ import com.example.picturegrid.feature.gallery.api.domain.GalleryError
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.NetworkFailure
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -96,7 +97,7 @@ class GalleryStoreTest {
             repo(
                 cached = null,
                 refreshResult = GalleryRefreshResult.Failure(
-                    GalleryError.Network("boom", retryable = true),
+                    GalleryError.Network(NetworkFailure.IO, retryable = true),
                     null,
                 ),
             ),
@@ -115,7 +116,7 @@ class GalleryStoreTest {
             repo(
                 cached = cached,
                 refreshResult = GalleryRefreshResult.Failure(
-                    GalleryError.Network("timeout", retryable = true),
+                    GalleryError.Network(NetworkFailure.TIMEOUT, retryable = true),
                     cached,
                 ),
             ),

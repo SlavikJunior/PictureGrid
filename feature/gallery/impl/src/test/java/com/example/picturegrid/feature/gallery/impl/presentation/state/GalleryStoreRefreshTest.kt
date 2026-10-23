@@ -4,6 +4,8 @@ import com.example.picturegrid.feature.gallery.api.domain.GalleryError
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.NetworkFailure
+import com.example.picturegrid.feature.gallery.impl.presentation.ui.shouldRefreshOnNetworkChange
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -15,7 +17,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import com.example.picturegrid.feature.gallery.impl.presentation.ui.shouldRefreshOnNetworkChange
 
 /**
  * Проверки обновления списка по интенту [GalleryStore.Intent.Refresh].
@@ -73,7 +74,7 @@ class GalleryStoreRefreshTest {
         val repository = object : GalleryRepository {
             override suspend fun getCached(): List<GalleryItem>? = cached
             override suspend fun refresh(): GalleryRefreshResult =
-                GalleryRefreshResult.Failure(GalleryError.Network("io", retryable = false), cached)
+                GalleryRefreshResult.Failure(GalleryError.Network(NetworkFailure.IO, retryable = false), cached)
         }
         val store = GalleryStoreFactory(
             storeFactory = com.arkivanov.mvikotlin.main.store.DefaultStoreFactory(),

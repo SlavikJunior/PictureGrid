@@ -1,22 +1,23 @@
 package com.example.picturegrid.feature.gallery.impl.presentation.state
 
+import com.arkivanov.mvikotlin.core.rx.Observer
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
+import com.example.picturegrid.feature.gallery.api.domain.GalleryError
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.arkivanov.mvikotlin.core.rx.Observer
 
 internal interface GalleryStore : Store<GalleryStore.Intent, GalleryStore.State, Nothing> {
 
@@ -26,8 +27,8 @@ internal interface GalleryStore : Store<GalleryStore.Intent, GalleryStore.State,
         val items: List<GalleryItem> = emptyList(),
         val isLoading: Boolean = true,
         val isRefreshing: Boolean = false,
-        val error: String? = null,
-        val refreshError: String? = null,
+        val error: GalleryError? = null,
+        val refreshError: GalleryError? = null,
     )
 
     sealed interface Intent {
@@ -90,7 +91,7 @@ internal class GalleryStoreFactory(
     private sealed interface Msg {
         data object LoadingStarted : Msg
         data class Loaded(val items: List<GalleryItem>) : Msg
-        data class LoadFailed(val message: String, val cached: List<GalleryItem>?) : Msg
+        data class LoadFailed(val error: GalleryError, val cached: List<GalleryItem>?) : Msg
         data object RefreshingStarted : Msg
     }
 
@@ -111,13 +112,13 @@ internal class GalleryStoreFactory(
                         isLoading = false,
                         isRefreshing = false,
                         error = null,
-                        refreshError = msg.message,
+                        refreshError = msg.error,
                     )
                 } else {
                     copy(
                         isLoading = false,
                         isRefreshing = false,
-                        error = msg.message,
+                        error = msg.error,
                         refreshError = null,
                     )
                 }
@@ -159,12 +160,7 @@ internal class GalleryStoreFactory(
                         if (result.error.retryable) {
                             syncScheduler()
                         }
-                        dispatch(
-                            Msg.LoadFailed(
-                                message = result.error.toMessage(),
-                                cached = result.cached,
-                            ),
-                        )
+                        dispatch(Msg.LoadFailed(error = result.error, cached = result.cached))
                     }
                 }
             }
@@ -190,21 +186,10 @@ internal class GalleryStoreFactory(
                         if (result.error.retryable) {
                             syncScheduler()
                         }
-                        dispatch(
-                            Msg.LoadFailed(
-                                message = result.error.toMessage(),
-                                cached = result.cached,
-                            ),
-                        )
+                        dispatch(Msg.LoadFailed(error = result.error, cached = result.cached))
                     }
                 }
             }
         }
     }
 }
-
-private fun com.example.picturegrid.feature.gallery.api.domain.GalleryError.toMessage(): String =
-    when (this) {
-        is com.example.picturegrid.feature.gallery.api.domain.GalleryError.Network -> "Сеть: ${message}"
-        is com.example.picturegrid.feature.gallery.api.domain.GalleryError.Storage -> "Хранилище: ${message}"
-    }

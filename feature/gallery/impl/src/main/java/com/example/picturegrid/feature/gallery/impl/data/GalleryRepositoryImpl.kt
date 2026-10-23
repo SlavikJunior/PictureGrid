@@ -1,13 +1,15 @@
 package com.example.picturegrid.feature.gallery.impl.data
 
 import com.example.picturegrid.core.network.NetworkClient
+import com.example.picturegrid.core.network.NetworkError
 import com.example.picturegrid.core.network.NetworkResult
 import com.example.picturegrid.core.network.isRetryable
-import com.example.picturegrid.core.network.toUserMessage
 import com.example.picturegrid.feature.gallery.api.domain.GalleryError
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.NetworkFailure
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -17,7 +19,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import java.io.IOException
 
 /**
  * Реализация [GalleryRepository], оркестрирующая сеть, парсер и хранилище.
@@ -69,17 +70,14 @@ internal class GalleryRepositoryImpl(
                     storage.write(result.data)
                 } catch (e: IOException) {
                     return@withContext GalleryRefreshResult.Failure(
-                        GalleryError.Storage("Не удалось сохранить список", retryable = false),
+                        GalleryError.Storage(),
                         cached,
                     )
                 }
                 GalleryRefreshResult.Success(items)
             }
             is NetworkResult.Failure -> {
-                GalleryRefreshResult.Failure(
-                    GalleryError.Network(result.error.toUserMessage(), result.error.isRetryable()),
-                    cached,
-                )
+                GalleryRefreshResult.Failure(result.error.toGalleryError(), cached)
             }
         }
     }
@@ -88,3 +86,22 @@ internal class GalleryRepositoryImpl(
         const val DEFAULT_URL = "https://it-link.ru/test/images.txt"
     }
 }
+
+/**
+ * Переводит транспортную ошибку в доменную.
+ *
+ * Текст ошибки здесь не формируется: строку для пользователя выбирает UI
+ * по [NetworkFailure] (INV-14). Код ответа сохраняется отдельно, чтобы UI
+ * мог показать его в сообщении.
+ */
+private fun NetworkError.toGalleryError(): GalleryError.Network = GalleryError.Network(
+    reason = when (this) {
+        NetworkError.Io -> NetworkFailure.IO
+        NetworkError.Timeout -> NetworkFailure.TIMEOUT
+        NetworkError.EmptyBody -> NetworkFailure.EMPTY_BODY
+        is NetworkError.Http -> NetworkFailure.HTTP
+        is NetworkError.TooLarge -> NetworkFailure.TOO_LARGE
+    },
+    httpCode = (this as? NetworkError.Http)?.code,
+    retryable = isRetryable(),
+)

@@ -24,7 +24,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
+import com.example.picturegrid.feature.gallery.api.domain.GalleryError
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
+import com.example.picturegrid.feature.gallery.api.domain.NetworkFailure
 import com.example.picturegrid.feature.gallery.impl.R
 import com.example.picturegrid.feature.gallery.impl.presentation.state.GalleryStore
 
@@ -46,18 +48,37 @@ internal fun GalleryLoadingContent(modifier: Modifier = Modifier) {
 /** Список не загрузился: сообщение и действие «Повторить». */
 @Composable
 internal fun GalleryErrorContent(
-    message: String,
+    error: GalleryError,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         ColumnCentered {
-            Text(message, textAlign = TextAlign.Center)
+            Text(GalleryErrorMessage(error), textAlign = TextAlign.Center)
             Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) {
                 Text(stringResource(R.string.gallery_retry))
             }
         }
     }
+}
+
+/**
+ * Текст ошибки для пользователя.
+ *
+ * Строки берутся только из ресурсов: store и репозиторий не знают, как
+ * ошибка называется на экране (INV-14, INV-20). Имя в PascalCase, потому что
+ * функция композируемая — этого требует ComposeConventionTest.
+ */
+@Composable
+internal fun GalleryErrorMessage(error: GalleryError): String = when (error) {
+    is GalleryError.Network -> when (error.reason) {
+        NetworkFailure.IO -> stringResource(R.string.gallery_error_io)
+        NetworkFailure.TIMEOUT -> stringResource(R.string.gallery_error_timeout)
+        NetworkFailure.EMPTY_BODY -> stringResource(R.string.gallery_error_empty_body)
+        NetworkFailure.HTTP -> stringResource(R.string.gallery_error_http, error.httpCode ?: 0)
+        NetworkFailure.TOO_LARGE -> stringResource(R.string.gallery_error_too_large)
+    }
+    is GalleryError.Storage -> stringResource(R.string.gallery_error_storage)
 }
 
 /** Список пуст: предложение обновить. */
@@ -81,7 +102,7 @@ internal fun GalleryEmptyContent(
 internal fun GallerySuccessContent(
     items: List<GalleryItem>,
     isRefreshing: Boolean,
-    refreshError: String?,
+    refreshError: GalleryError?,
     imageLoader: ImageLoader,
     onImageClick: (GalleryItem.Image) -> Unit,
     modifier: Modifier = Modifier,
@@ -125,7 +146,7 @@ internal fun GallerySuccessContent(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = refreshError,
+                        text = GalleryErrorMessage(refreshError),
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(8.dp),
@@ -155,7 +176,10 @@ private fun GalleryLoadingContentPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun GalleryErrorContentPreview() {
-    GalleryErrorContent(message = "Сеть недоступна", onRetry = {})
+    GalleryErrorContent(
+        error = GalleryError.Network(NetworkFailure.IO, retryable = true),
+        onRetry = {},
+    )
 }
 
 @Preview(showBackground = true)

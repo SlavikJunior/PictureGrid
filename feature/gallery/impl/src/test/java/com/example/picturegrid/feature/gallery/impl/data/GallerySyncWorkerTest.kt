@@ -10,6 +10,7 @@ import com.example.picturegrid.feature.gallery.api.domain.GalleryError
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.NetworkFailure
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -56,7 +57,7 @@ class GallerySyncWorkerTest {
     @Test
     fun `worker requests retry on temporary network error`() = runBlocking {
         val repository = FakeRepository(
-            GalleryRefreshResult.Failure(GalleryError.Network("timeout", retryable = true), null)
+            GalleryRefreshResult.Failure(GalleryError.Network(NetworkFailure.TIMEOUT, retryable = true), null)
         )
         initWorkManager(repository)
         val worker = TestListenableWorkerBuilder<GallerySyncWorker>(context).setWorkerFactory(workerFactory).build()
@@ -66,7 +67,7 @@ class GallerySyncWorkerTest {
     @Test
     fun `worker returns failure on permanent error`() = runBlocking {
         val repository = FakeRepository(
-            GalleryRefreshResult.Failure(GalleryError.Network("HTTP error 404", retryable = false), null)
+            GalleryRefreshResult.Failure(GalleryError.Network(NetworkFailure.HTTP, httpCode = 404, retryable = false), null)
         )
         initWorkManager(repository)
         val worker = TestListenableWorkerBuilder<GallerySyncWorker>(context).setWorkerFactory(workerFactory).build()

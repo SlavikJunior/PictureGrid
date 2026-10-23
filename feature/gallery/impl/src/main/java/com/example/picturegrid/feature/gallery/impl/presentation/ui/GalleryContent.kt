@@ -54,7 +54,7 @@ internal fun GalleryContent(
                 when {
                     state.isLoading && state.items.isEmpty() -> GalleryLoadingContent()
                     state.error != null && state.items.isEmpty() -> GalleryErrorContent(
-                        message = state.error,
+                        error = state.error,
                         onRetry = onRetry,
                     )
                     // Список получен, но не содержит ни одной строки: пустая сетка

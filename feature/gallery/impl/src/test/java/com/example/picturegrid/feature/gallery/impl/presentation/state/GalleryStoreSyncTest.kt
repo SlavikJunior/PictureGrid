@@ -4,6 +4,7 @@ import com.example.picturegrid.feature.gallery.api.domain.GalleryError
 import com.example.picturegrid.feature.gallery.api.domain.GalleryItem
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRefreshResult
 import com.example.picturegrid.feature.gallery.api.domain.GalleryRepository
+import com.example.picturegrid.feature.gallery.api.domain.NetworkFailure
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -41,7 +42,7 @@ class GalleryStoreSyncTest {
         val repository = object : GalleryRepository {
             override suspend fun getCached(): List<GalleryItem>? = cached
             override suspend fun refresh(): GalleryRefreshResult =
-                GalleryRefreshResult.Failure(GalleryError.Network("io", retryable = true), cached)
+                GalleryRefreshResult.Failure(GalleryError.Network(NetworkFailure.IO, retryable = true), cached)
         }
         val store = GalleryStoreFactory(
             storeFactory = com.arkivanov.mvikotlin.main.store.DefaultStoreFactory(),
@@ -105,7 +106,7 @@ class GalleryStoreSyncTest {
         val repository = object : GalleryRepository {
             override suspend fun getCached(): List<GalleryItem>? = null
             override suspend fun refresh(): GalleryRefreshResult =
-                GalleryRefreshResult.Failure(GalleryError.Network("Ошибка сети", retryable = true), null)
+                GalleryRefreshResult.Failure(GalleryError.Network(NetworkFailure.IO, retryable = true), null)
         }
         val store = GalleryStoreFactory(
             storeFactory = com.arkivanov.mvikotlin.main.store.DefaultStoreFactory(),
@@ -117,7 +118,11 @@ class GalleryStoreSyncTest {
         store.init()
         advanceUntilIdle()
         assertEquals(1, scheduled)
-        assertTrue("пользователь должен видеть причину", store.state.error?.contains("Сеть") == true)
+        assertEquals(
+            "пользователь должен видеть причину",
+            NetworkFailure.IO,
+            (store.state.error as GalleryError.Network).reason,
+        )
         store.dispose()
     }
 }
